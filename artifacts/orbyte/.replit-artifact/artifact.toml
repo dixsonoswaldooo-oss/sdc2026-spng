@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Orbyte Plug-in"
+description = "The original Orbyte plug-in starter for SDC Hackathon 2026, Domain 2, preserving its Indonesian introduction and planned workflow."
+version = "1.0.0"
+id = "artifacts/orbyte"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24529
+
+[services.development]
+run = "pnpm --filter @workspace/orbyte run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/orbyte", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/orbyte/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24529"
+BASE_PATH = "/"
