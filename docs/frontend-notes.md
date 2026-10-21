@@ -157,7 +157,19 @@ so it never says "shortfall" while the status says "Safe". Activity times never 
 5. Demo → Simulate AI unavailable → "Fallback (rules-based)" badge and rules text, no blank areas.
 6. Activity Log: every step above, with who, role, time and reason.
 
-### Not built yet
+---
 
-- Phase 8 polish (copy pass, more phone checks). The page script is large (650 kB, mostly the chart library); fine for the demo.
-- Connecting the real AI (see "Is the AI connected?" above).
+## Phase 8: Polish
+
+- **Phones (390 × 844, checked with device emulation):** no page or panel scrolls sideways. On phones the top bar drops the
+  company name (it is in the menu), "Demo data" shows as an icon, and the Demo button is a small round icon.
+- **Keyboard:** first Tab shows "Skip to content"; every focused item has a visible ring; pop-ups trap focus and close with Esc.
+- **Copy:** no exclamation marks in system text; every amount goes through one formatter (`RM 1,234.00`).
+- **Numbers:** 17 automatic tests reproduce every number in the brief.
+
+Replit note: Replit Agent switched Replit to Node 20, so `test` now runs through `tsx`, and Replit runs test + typecheck as checks.
+
+### Still open
+
+- Connecting the real AI (see "Is the AI connected?" above). This matters most for the judges.
+- The page script is large (650 kB, mostly the chart library). Fine for the demo; could be split later.

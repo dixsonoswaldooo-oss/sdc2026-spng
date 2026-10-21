@@ -13,7 +13,7 @@ export function Card({ title, action, id, className = '', children }: Props) {
   return (
     <section id={id} aria-labelledby={headingId} className={`rounded-card border border-line bg-surface p-5 shadow-soft ${className}`}>
       {title && (
-        <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <h2 id={headingId} className="text-base font-semibold">
             {title}
           </h2>

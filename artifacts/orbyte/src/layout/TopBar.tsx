@@ -14,15 +14,18 @@ export function TopBar({ onOpenMenu }: { onOpenMenu: () => void }) {
       <button type="button" onClick={onOpenMenu} className="rounded-input p-2 hover:bg-canvas lg:hidden" aria-label="Open menu">
         <Menu className="size-5" aria-hidden="true" />
       </button>
-      <p className="min-w-0 flex-1 truncate text-sm font-medium">{workspace.companyName}</p>
+      {/* On phones the company name is in the menu, so the top bar keeps room for the role switch. */}
+      <p className="min-w-0 flex-1 truncate text-sm font-medium">
+        <span className="hidden sm:inline">{workspace.companyName}</span>
+      </p>
 
       {USE_MOCK && (
         <span
           title="Sample data and sample AI text. Not connected to the backend yet."
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-at-risk/40 bg-at-risk/10 px-2.5 py-1 text-xs font-medium text-at-risk"
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-at-risk/40 bg-at-risk/10 px-2 py-1 text-xs font-medium text-at-risk sm:px-2.5"
         >
           <FlaskConical className="size-3.5" aria-hidden="true" />
-          Demo data
+          <span className="sr-only sm:not-sr-only">Demo data</span>
         </span>
       )}
 

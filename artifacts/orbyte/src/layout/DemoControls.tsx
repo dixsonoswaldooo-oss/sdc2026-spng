@@ -38,10 +38,11 @@ export function DemoControls() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="fixed bottom-4 right-4 z-40 inline-flex items-center gap-2 rounded-full bg-ink px-4 py-2.5 text-sm font-medium text-white shadow-soft hover:bg-ink/90"
+        aria-label="Demo controls"
+        className="fixed bottom-3 right-3 z-40 inline-flex items-center gap-2 rounded-full bg-ink p-3 text-sm font-medium text-white shadow-soft hover:bg-ink/90 sm:bottom-4 sm:right-4 sm:px-4 sm:py-2.5"
       >
         <FlaskConical className="size-4" aria-hidden="true" />
-        Demo
+        <span className="hidden sm:inline">Demo</span>
       </button>
 
       <Dialog open={open} onClose={() => !busy && setOpen(false)} labelledBy="demo-title" side="corner">

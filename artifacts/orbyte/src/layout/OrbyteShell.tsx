@@ -13,6 +13,9 @@ export function OrbyteShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[15rem_1fr]">
+      <a href="#main" className="sr-only rounded-input bg-accent px-3 py-2 text-sm font-medium text-white focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50">
+        Skip to content
+      </a>
       <aside className="hidden border-r border-line bg-surface lg:block">
         <div className="sticky top-0">
           <Sidebar />
@@ -33,7 +36,7 @@ export function OrbyteShell({ children }: { children: ReactNode }) {
 
       <div className="flex min-w-0 flex-col">
         <TopBar onOpenMenu={() => setMenuOpen(true)} />
-        <main className="mx-auto w-full max-w-content flex-1 px-4 pb-24 pt-6 sm:px-6 lg:pt-8">{children}</main>
+        <main id="main" tabIndex={-1} className="mx-auto focus:outline-none w-full max-w-content flex-1 px-4 pb-24 pt-6 sm:px-6 lg:pt-8">{children}</main>
       </div>
       {DEMO_MODE && <DemoControls />}
     </div>
