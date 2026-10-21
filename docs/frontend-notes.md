@@ -57,3 +57,66 @@ Set in `artifacts/orbyte/.replit-artifact/artifact.toml` under `[services.env]`.
 - **Money uses a true minus sign**, as in the brief: `−RM 8,400.00`.
 - **PO-077 fix (agreed with Owen):** in the brief, the RM 1,200 packaging order was never counted as money going out, yet "Hold purchase" claimed to save RM 1,200. From Phase 3 it counts as money out before payday, and the bank balance becomes RM 7,400 instead of RM 6,200, so every headline number in the brief stays the same (−8,400, +1,380, +2,580, +3,400).
 - **No lint check yet:** adding a linter would change the shared install file used by the whole team.
+
+---
+
+## Phases 2–5: Orbyte shell, demo data, Overview, Actions
+
+**What was built:** the clickable core of the demo. Open the site and it goes straight to Cash Guard inside a mock Orbyte workspace.
+A judge can see the shortfall, understand why, try actions in "What if", open an action, edit the customer messages (EN/BM),
+and approve it as Owner. The numbers update everywhere and the decision is recorded.
+
+### How data flows
+
+```
+Screen (e.g. OverviewPage)
+  → useApi(getSummary)                 src/lib/useApi.ts   loads data, shows loading/error, reloads after any change
+  → client.ts                          src/api/client.ts   the only door to data
+      mock mode → mocks/engine.ts      fake backend: the only place numbers are calculated
+      real mode → fetch /api/...       T1's backend (same contract)
+```
+
+After any change (approve, reject, submit, run check), `client.ts` tells every screen to reload, so the Overview,
+the sidebar status and the What-if panel all agree. In mock mode the demo is saved in the browser tab, so a page refresh keeps approvals.
+
+### What each new file does (in `artifacts/orbyte/src`)
+
+| File | In plain words |
+|---|---|
+| `api/types.ts` | The shape of every piece of data, agreed with the backend. Mirrors `docs/frontend-api-contract.md`. |
+| `api/client.ts` | The only place that fetches data. Switches between demo data and the real backend. Sends the "View as" role with every request. |
+| `api/errors.ts` | An error with a status code, e.g. 403 when a Finance Admin tries to approve. |
+| `mocks/fixtures.ts` | The Kopi Kawan demo data: balances, invoices, bills, the packaging order, AI texts and EN/BM drafts. |
+| `mocks/engine.ts` | Fake backend. Projects cash day by day, applies approved actions, checks roles, writes the activity log, handles "AI unavailable". |
+| `mocks/engine.test.ts` | 12 automatic checks that the brief's numbers come out exactly (−8,400 / +1,380 / +2,580 / +3,400) and that roles are enforced. |
+| `lib/useApi.ts` | Small helper every screen uses to load data. |
+| `lib/role.ts`, `layout/RoleProvider.tsx` | Remembers who is "clicking": Owner or Finance Admin. |
+| `lib/status.ts` | How Safe / At risk / Shortfall look: always an icon plus words, never colour alone. |
+| `layout/OrbyteShell.tsx`, `Sidebar.tsx`, `TopBar.tsx` | The mock Orbyte workspace: menu with live Cash Guard status, company name, credits, "View as" switch, avatar. On phones the menu slides in. |
+| `layout/PlaceholderPage.tsx` | Shown for Orbyte modules outside the demo (People, Hiring…) and for tabs not built yet. |
+| `components/*` | Shared pieces: Button, Card, Money, StatusPill, AiBadge, Dialog (pop-ups that trap keyboard focus and close with Esc), Skeleton, ErrorState, Toast. |
+| `features/cash-guard/CashGuardLayout.tsx` | Cash Guard title and its six tabs. |
+| `features/cash-guard/OverviewPage.tsx` and its parts | Status banner, 4 key figures, cash chart (current vs. with actions), "Where the number comes from", AI explanation with its sources, What-if panel, "Run check now" progress steps. |
+| `features/cash-guard/ActionsPage.tsx` and its parts | AI-ranked action cards, the side panel (invoices to chase, editable EN/BM messages, bill/order facts), role buttons, the confirm and reject dialogs, success message. |
+
+### Business rules (also in `docs/frontend-api-contract.md`)
+
+- Invoices not yet overdue count in full. Overdue invoices count only once a reminder is approved, weighted by how likely the customer is to pay.
+- Approving "Move bill" moves it to its allowed later date; approving "Hold purchase" moves the order to after payday.
+- Safe if the balance after payroll is at least the buffer; At risk if between 0 and the buffer; Shortfall if below 0.
+- Only the Owner approves, rejects or changes settings; only the Finance Admin submits for approval. Checked in the engine, not just by hiding buttons.
+- Salaries are never touched: the AI can only pick from three action types.
+
+### Checked
+
+- 15 automatic tests pass (`test`), typecheck and build pass.
+- Clicked through in a real (headless) Chrome: Overview shows Shortfall −RM 8,400.00; What-if with all 3 actions shows +RM 2,580.00 Safe;
+  switching a draft to BM works; approving the chase shows "3 messages will be queued… Nothing is sent until you confirm",
+  then the Overview shows RM 1,220.00 short (−8,400 + 7,180), still after a refresh; as Finance Admin there is no Approve button.
+- Layout checked at 1440 px and 390 px wide.
+
+### Not built yet (next steps)
+
+- Phase 6 tabs: Receivables, Bills & Purchases, Activity Log, Settings (the data and rules already exist in the engine).
+- Phase 7: floating Demo button (simulate payments, AI unavailable, reset). The engine already supports all three.
+- Phase 8: polish pass. The page script is large (650 kB, mostly the chart library); fine for the demo, could be split later.

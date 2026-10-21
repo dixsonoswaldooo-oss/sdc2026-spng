@@ -53,6 +53,7 @@ npx -y pnpm@10 --filter @workspace/orbyte run typecheck                         
 npx -y pnpm@10 --filter @workspace/orbyte run test                               # must pass before every commit
 ```
 
+Windows / Git Bash only: prefix commands with `MSYS_NO_PATHCONV=1`, or Git Bash turns `BASE_PATH=/` into `C:/Program Files/Git/`.
 Windows only: the repo strips Windows build binaries (Replit is Linux). If `vite build` fails on a missing
 `@rollup/rollup-win32-x64-msvc`, unpack that package (same version as rollup) into rollup's `node_modules/@rollup/`. Never commit this.
 

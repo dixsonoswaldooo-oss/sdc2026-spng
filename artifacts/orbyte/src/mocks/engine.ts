@@ -362,3 +362,9 @@ export function simulateAiDown(): void {
 export function reset(): void {
   state = initialState();
 }
+
+/** Lets the client keep the demo across a page refresh (saved per browser tab). */
+export const exportState = (): string => JSON.stringify(state);
+export function importState(saved: string): void {
+  state = JSON.parse(saved) as State;
+}

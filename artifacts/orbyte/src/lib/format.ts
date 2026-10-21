@@ -18,9 +18,16 @@ export function formatMoney(amount: number, { signed = false } = {}): string {
  * "2026-10-25" → "25 Oct 2026". Built by hand because browsers now write September as "Sept",
  * and reading the text directly means the viewer's time zone can never shift the day.
  */
-export function formatDate(isoDate: string): string {
+export function formatDate(isoDate: string, { year: withYear = true } = {}): string {
   const [year, month, day] = isoDate.split('-').map(Number);
-  return `${day} ${MONTHS[month - 1]} ${year}`;
+  return withYear ? `${day} ${MONTHS[month - 1]} ${year}` : `${day} ${MONTHS[month - 1]}`;
+}
+
+/** Chart axis labels only: 10000 → "RM 10k", -8400 → "−RM 8.4k". Everywhere else use formatMoney. */
+export function formatMoneyShort(amount: number): string {
+  const abs = Math.abs(amount);
+  const text = abs >= 1000 ? `${Number((abs / 1000).toFixed(1))}k` : String(Math.round(abs));
+  return `${amount < 0 ? '−' : ''}RM ${text}`;
 }
 
 /** "2026-10-21T00:00:00Z" → "21 Oct, 08:00", always in Malaysia time. */

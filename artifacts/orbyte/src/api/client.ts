@@ -36,12 +36,28 @@ const changed = () => {
 
 const MOCK_DELAY_MS = 350; // long enough to show loading states
 const RUN_DELAY_MS = 4000; // brief §7: a mock check takes about 4 seconds
+const STORAGE_KEY = 'cash-guard-demo';
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// Mock data survives a page refresh in this browser tab, so a reload during the demo keeps approvals.
+try {
+  const saved = sessionStorage.getItem(STORAGE_KEY);
+  if (USE_MOCK && saved) engine.importState(saved);
+} catch {
+  // storage blocked (private mode): the demo simply starts fresh
+}
 
 async function mock<T>(work: () => T, { delay = MOCK_DELAY_MS, mutates = false } = {}): Promise<T> {
   await sleep(delay);
   const result = structuredClone(work()); // screens get copies, never the engine's own data
-  if (mutates) changed();
+  if (mutates) {
+    try {
+      sessionStorage.setItem(STORAGE_KEY, engine.exportState());
+    } catch {
+      // not saved; the demo still works until a refresh
+    }
+    changed();
+  }
   return result;
 }
 
