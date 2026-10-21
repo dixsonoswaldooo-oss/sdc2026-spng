@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: ai
+    description: AI test operations
 paths:
   /healthz:
     get:
@@ -24,6 +26,48 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /ai-test:
+    post:
+      operationId: runAiTest
+      tags: [ai]
+      summary: Send a prompt to the configured AI model
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AiTestInput"
+      responses:
+        "200":
+          description: AI answer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiTestResult"
+        "400":
+          description: Invalid prompt
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "502":
+          description: AI service failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "503":
+          description: AI service is not configured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "504":
+          description: AI service timed out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +77,27 @@ components:
           type: string
       required:
         - status
+    AiTestInput:
+      type: object
+      properties:
+        prompt:
+          type: string
+          minLength: 1
+          maxLength: 10000
+      required:
+        - prompt
+    AiTestResult:
+      type: object
+      properties:
+        answer:
+          type: string
+      required:
+        - answer
+    ApiError:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
 
