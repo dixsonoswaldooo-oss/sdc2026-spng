@@ -1,15 +1,18 @@
-# [Project name]
+# Orbyte Plug-in
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+Orbyte Cash Guard is a cash-flow planning and approval demo for SDC Hackathon 2026.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+- Start `artifacts/orbyte: web` and `artifacts/api-server: API Server` using their managed workflows.
+- `pnpm --filter @workspace/orbyte run test` — run cash-flow engine and formatting tests on Node 20 using tsx.
+- `pnpm --filter @workspace/orbyte run typecheck` — check the frontend.
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- Cash Guard uses the existing browser demo data by default; no database credentials are required for the demo.
+- The optional `/tes-ai` page needs server-only `RUNPOD_API_KEY`, `RUNPOD_ENDPOINT_ID`, and `RUNPOD_MODEL` for live AI responses. Without them it returns its existing friendly unavailable message.
 
 ## Stack
 
@@ -22,15 +25,19 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/orbyte/` — React/Vite frontend, including Cash Guard and `/tes-ai`.
+- `artifacts/api-server/` — Express health and AI-test endpoints.
+- `docs/frontend-api-contract.md` — Cash Guard API contract for future backend integration.
+- `.migration-backup/` — older Next.js starter; not the current application.
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- Preserve the newer Cash Guard frontend rather than overwriting it with the older starter in `.migration-backup`.
+- Artifact metadata owns workflow ports and preview routing; do not add duplicate workflows or run root-level `pnpm dev`.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+Cash-flow overview, action scenarios and role-based demo approval flows. See `docs/frontend-notes.md` for existing implemented and deferred screens.
 
 ## User preferences
 

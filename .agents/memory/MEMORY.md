@@ -1,0 +1,1 @@
+- [Import source precedence](import-source-precedence.md) — the backup is an older starter; preserve the newer Cash Guard app during migration.
