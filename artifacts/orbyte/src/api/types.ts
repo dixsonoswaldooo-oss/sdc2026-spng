@@ -60,6 +60,7 @@ export interface Receivable {
   likelihood: number; // 0–1
   reminderStatus: 'NONE' | 'DRAFTED' | 'SENT' | 'REPLIED';
   countedInProjection: boolean;
+  lastContactAt?: string; // added: when the customer was last reminded (ISO datetime)
 }
 
 export interface Bill {

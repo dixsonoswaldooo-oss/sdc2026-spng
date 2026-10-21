@@ -2,7 +2,11 @@ import { ShieldCheck } from 'lucide-react';
 import { Link, Route, Switch, useLocation } from 'wouter';
 import { PlaceholderPage } from '@/layout/PlaceholderPage';
 import { ActionsPage } from './ActionsPage';
+import { ActivityPage } from './ActivityPage';
+import { BillsPage } from './BillsPage';
 import { OverviewPage } from './OverviewPage';
+import { ReceivablesPage } from './ReceivablesPage';
+import { SettingsPage } from './SettingsPage';
 
 // Paths are relative to /cash-guard (wouter "nest").
 const TABS = [
@@ -13,8 +17,6 @@ const TABS = [
   { href: '/activity', label: 'Activity Log' },
   { href: '/settings', label: 'Settings' },
 ];
-
-const NEXT_STEP = 'This tab is part of the next build step (Phase 6). The data behind it already works: see Overview and Actions.';
 
 export function CashGuardLayout() {
   const [location] = useLocation();
@@ -54,11 +56,13 @@ export function CashGuardLayout() {
       <Switch>
         <Route path="/" component={OverviewPage} />
         <Route path="/actions" component={ActionsPage} />
-        {TABS.slice(2).map((tab) => (
-          <Route key={tab.href} path={tab.href}>
-            <PlaceholderPage title={tab.label} message={NEXT_STEP} />
-          </Route>
-        ))}
+        <Route path="/receivables" component={ReceivablesPage} />
+        <Route path="/bills" component={BillsPage} />
+        <Route path="/activity" component={ActivityPage} />
+        <Route path="/settings" component={SettingsPage} />
+        <Route>
+          <PlaceholderPage title="Page not found" message="This Cash Guard page does not exist." />
+        </Route>
       </Switch>
     </>
   );

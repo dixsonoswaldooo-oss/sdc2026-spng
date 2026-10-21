@@ -4,7 +4,7 @@ interface Props {
   open: boolean;
   onClose: () => void;
   labelledBy: string;
-  side?: 'center' | 'left' | 'right'; // left/right = drawer
+  side?: 'center' | 'left' | 'right' | 'corner'; // left/right = drawer, corner = small panel bottom-right
   children: ReactNode;
 }
 
@@ -12,6 +12,7 @@ const PLACEMENT = {
   center: 'm-auto w-[calc(100%-2rem)] max-w-md rounded-card',
   left: 'my-0 ml-0 mr-auto h-full max-h-none w-72 max-w-[85vw]',
   right: 'my-0 ml-auto mr-0 h-full max-h-none w-full max-w-xl',
+  corner: 'mb-20 ml-auto mr-4 mt-auto w-[calc(100%-2rem)] max-w-sm rounded-card',
 };
 
 /**

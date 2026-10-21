@@ -11,8 +11,9 @@ the website runs on built-in demo data (`VITE_USE_MOCK=true`) until the backend 
 4. **`GET /projection` returns `ProjectionResult`**: `{ points, withActions: { projectedAfterPayroll, gapToBuffer, status } }`.
    The what-if panel shows `withActions` as is; the frontend does no maths.
 5. **`POST /run` answers when the check is finished** (up to ~60 s while the AI wakes up), not straight away.
-6. **`POST /actions/:id/submit` accepts `{ drafts }`**, so a Finance Admin's edited messages reach the Owner.
-7. **Errors as `{ "error": "message" }`** with 400 / 403 / 404 / 409, and role checks on the server.
-8. Switching to the real backend: set `VITE_USE_MOCK = "false"` in `artifacts/orbyte/.replit-artifact/artifact.toml`.
+6. **`Receivable.lastContactAt`** (new, optional): when the customer was last reminded; set when a chase is approved.
+7. **`POST /actions/:id/submit` accepts `{ drafts }`**, so a Finance Admin's edited messages reach the Owner.
+8. **Errors as `{ "error": "message" }`** with 400 / 403 / 404 / 409, and role checks on the server.
+9. Switching to the real backend: set `VITE_USE_MOCK = "false"` in `artifacts/orbyte/.replit-artifact/artifact.toml`.
 
 Full contract: `docs/frontend-api-contract.md`. Reference implementation of every rule: `artifacts/orbyte/src/mocks/engine.ts`.

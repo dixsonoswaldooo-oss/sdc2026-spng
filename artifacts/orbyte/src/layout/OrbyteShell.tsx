@@ -1,6 +1,8 @@
 import { X } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { Dialog } from '@/components/Dialog';
+import { DEMO_MODE } from '@/lib/env';
+import { DemoControls } from './DemoControls';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
 
@@ -31,8 +33,9 @@ export function OrbyteShell({ children }: { children: ReactNode }) {
 
       <div className="flex min-w-0 flex-col">
         <TopBar onOpenMenu={() => setMenuOpen(true)} />
-        <main className="mx-auto w-full max-w-content flex-1 px-4 py-6 sm:px-6 lg:py-8">{children}</main>
+        <main className="mx-auto w-full max-w-content flex-1 px-4 pb-24 pt-6 sm:px-6 lg:pt-8">{children}</main>
       </div>
+      {DEMO_MODE && <DemoControls />}
     </div>
   );
 }

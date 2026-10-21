@@ -53,6 +53,7 @@ See `types.ts` for full field lists: `CashGuardSummary`, `Breakdown`, `BasedOn`,
 - `potentialImpact` / `expectedImpact` are recomputed from current data (expected for chase = Σ amount × likelihood).
 - Never propose delaying or reducing salaries.
 - When the AI fails or takes over 20 s: rules-based explanation and template drafts, with `isFallback: true`.
+- After any change in the numbers (approval, payment, settings) rewrite the explanation, so it never contradicts the status.
 
 ## Audit `kind` values
 

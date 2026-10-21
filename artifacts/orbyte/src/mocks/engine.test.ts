@@ -54,6 +54,7 @@ test('customers pay + action 2 approved → SAFE +3,400', () => {
   const s = engine.getSummary();
   assert.equal(s.breakdown.projectedAfterPayroll, 3400);
   assert.equal(s.status, 'SAFE');
+  assert.ok(s.ai.explanation.includes('is covered'), 'explanation must not still describe the old shortfall');
   assert.equal(engine.getActions().some((a) => a.type === CHASE), false); // nothing left to chase
 });
 
@@ -89,7 +90,7 @@ test('reject needs a reason and is logged with it', () => {
   assert.throws(() => engine.rejectAction(id, 'OWNER', '  '), (e) => e instanceof ApiError && e.status === 400);
   engine.rejectAction(id, 'OWNER', 'Need the bags this week');
   const event = engine.getAudit().find((e) => e.kind === 'ACTION_REJECTED')!;
-  assert.equal(event.details?.reason, 'Need the bags this week');
+  assert.equal(event.details?.Reason, 'Need the bags this week');
 });
 
 test('AI down: fallback explanation and template drafts, nothing blank', () => {
@@ -101,11 +102,26 @@ test('AI down: fallback explanation and template drafts, nothing blank', () => {
   assert.equal(engine.regenerateDraft('INV-1021', 'BM', 'OWNER').isFallback, true);
 });
 
+test('demo controls work in any order: customers pay, then AI down', () => {
+  engine.simulatePayments();
+  assert.doesNotThrow(() => engine.simulateAiDown());
+  assert.equal(engine.getSummary().ai.isFallback, true);
+});
+
 test('regenerate cycles through AI versions per language', () => {
   const first = engine.regenerateDraft('INV-1021', 'BM', 'FINANCE_ADMIN');
   const second = engine.regenerateDraft('INV-1021', 'BM', 'FINANCE_ADMIN');
   assert.notEqual(first.body, second.body);
   assert.ok(first.body.startsWith('Salam Encik Faizal'));
+});
+
+test('Owner settings change the status; chased invoices record the contact time', () => {
+  engine.updateSettings('OWNER', { ...engine.getSettings(), safetyBuffer: 3000 });
+  assert.equal(engine.getProjection([idOf(CHASE), idOf(RESCHEDULE), idOf(HOLD)]).withActions.status, 'AT_RISK'); // 2,580 < 3,000
+  engine.approveAction(idOf(CHASE), 'OWNER');
+  const chased = engine.getReceivables().filter((r) => r.lastContactAt);
+  assert.deepEqual(chased.map((r) => r.id), ['INV-1021', 'INV-1027', 'INV-1031']);
+  assert.ok(chased.every((r) => r.countedInProjection && r.reminderStatus === 'SENT'));
 });
 
 test('no action ever touches salaries', () => {

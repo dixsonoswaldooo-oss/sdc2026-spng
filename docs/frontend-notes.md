@@ -131,8 +131,33 @@ the sidebar status and the What-if panel all agree. In mock mode the demo is sav
   then the Overview shows RM 1,220.00 short (−8,400 + 7,180), still after a refresh; as Finance Admin there is no Approve button.
 - Layout checked at 1440 px and 390 px wide.
 
-### Not built yet (next steps)
+---
 
-- Phase 6 tabs: Receivables, Bills & Purchases, Activity Log, Settings (the data and rules already exist in the engine).
-- Phase 7: floating Demo button (simulate payments, AI unavailable, reset). The engine already supports all three.
-- Phase 8: polish pass. The page script is large (650 kB, mostly the chart library); fine for the demo, could be split later.
+## Phases 6–7: the other tabs and the Demo button
+
+| File (in `artifacts/orbyte/src`) | In plain words |
+|---|---|
+| `features/cash-guard/ReceivablesPage.tsx` | Customer invoices. Filter All / Overdue / Due before payday, sort by days overdue or amount. Overdue rows show an icon and "21 days overdue", not just colour. |
+| `features/cash-guard/BillsPage.tsx` | Bills (can each one move, why, penalty) and purchase orders (when paid, urgent or not). |
+| `features/cash-guard/ActivityPage.tsx`, `ActivityItem.tsx` | The audit trail, newest first: agent runs, data read, AI output (or fallback), approvals and rejections with who, role, time and reason, demo simulations. People's decisions are highlighted. Each entry opens to show details. |
+| `features/cash-guard/SettingsPage.tsx`, `SettingsForm.tsx` | Payday, alert lead time, safety buffer, message language, allowed actions. Locked row: "Never propose delaying or reducing salaries". Only the Owner can save; Finance Admin sees it read-only. |
+| `layout/DemoControls.tsx` | Floating "Demo" button (only when `VITE_DEMO_MODE=true`): Run check now, Simulate customers pay, Simulate AI unavailable, Reset demo data. |
+| `components/TableHeader.tsx`, `tableStyles.ts` | One table style: a normal table on laptops, stacked cards on phones. |
+
+Also changed: after any change in numbers (approve, customers pay, settings) the explanation is rewritten,
+so it never says "shortfall" while the status says "Safe". Activity times never show earlier than the 08:00 daily check.
+
+### Demo story (2 minutes), all checked by clicking through in Chrome
+
+1. Overview: **Shortfall, −RM 8,400.00**, AI explains why. What-if with all 3 actions: **+RM 2,580.00 Safe**.
+2. Actions → "Chase 3 overdue invoices" → switch a message to BM → Approve → "3 messages will be queued… Nothing is sent until you confirm" → Confirm.
+   Overview now: **RM 1,220.00 short**.
+3. View as Finance Admin: no Approve button, only "Submit for approval". Settings are read-only.
+4. Demo → Reset. Demo → Simulate customers pay → **At risk, +RM 800**. Approve "Move the Biji Emas bill" → **Safe, +RM 3,400.00**.
+5. Demo → Simulate AI unavailable → "Fallback (rules-based)" badge and rules text, no blank areas.
+6. Activity Log: every step above, with who, role, time and reason.
+
+### Not built yet
+
+- Phase 8 polish (copy pass, more phone checks). The page script is large (650 kB, mostly the chart library); fine for the demo.
+- Connecting the real AI (see "Is the AI connected?" above).

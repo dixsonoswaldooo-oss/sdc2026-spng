@@ -29,6 +29,7 @@ type FlowKind = 'sales' | 'receivables' | 'bills' | 'purchases' | 'payroll';
 interface Flow { date: ISODate; amount: Money; kind: FlowKind }
 
 const DAY_MS = 86_400_000;
+const STATUS_WORDS: Record<Status, string> = { SAFE: 'Safe', AT_RISK: 'At risk', SHORTFALL: 'Shortfall' };
 const OPEN: Action['status'][] = ['PROPOSED', 'PENDING_APPROVAL'];
 const TODAY = F.DEMO_TODAY;
 
@@ -181,6 +182,13 @@ function narrate(s: State): string {
   return `${body} No recommendation affects staff salaries.`;
 }
 
+/** After the numbers change, the agent rewrites its explanation so it never contradicts the status. */
+function refreshExplanation(): void {
+  state.changedSinceStart = true;
+  state.explanation = narrate(state);
+  state.aiGeneratedAt = now();
+}
+
 function fallbackExplanation(s: State): string {
   const b = breakdown(s);
   const overdue = s.receivables.filter(isOverdue).reduce((t, r) => t + r.amount, 0);
@@ -200,7 +208,8 @@ function basedOn(s: State): BasedOn[] {
 
 /** Demo date with the real Malaysia clock time, so timestamps fit the scenario. */
 function now(): string {
-  return `${TODAY}T${new Date(Date.now() + 8 * 3_600_000).toISOString().slice(11, 19)}+08:00`;
+  const clock = new Date(Date.now() + 8 * 3_600_000).toISOString().slice(11, 19);
+  return `${TODAY}T${clock < '08:01:00' ? '08:01:00' : clock}+08:00`; // never earlier than the 08:00 daily check
 }
 
 function log(s: State, role: AuditEvent['role'], kind: string, summary: string, details?: Record<string, unknown>, at = now()): void {
@@ -212,10 +221,18 @@ function logRun(s: State, at: (step: number) => string): void {
   const b = breakdown(s);
   const status = statusOf(b.projectedAfterPayroll, s.settings.safetyBuffer);
   log(s, 'AGENT', 'AGENT_RUN', `Cash check started (${daysBetween(TODAY, payday(s))} days to payday)`, undefined, at(0));
-  log(s, 'AGENT', 'DATA_READ', `Read payroll from Orbyte People: ${F.PAYROLL.headcount} staff, ${formatMoney(F.PAYROLL.total)}`, { source: 'Orbyte People' }, at(1));
-  log(s, 'AGENT', 'DATA_READ', `Read bank balance, ${s.receivables.length} invoices, ${s.bills.length} bills and POS sales from Orbyte Connect`, { source: 'Orbyte Connect' }, at(2));
-  log(s, 'SYSTEM', 'PROJECTION', `Projected balance after payroll: ${formatMoney(b.projectedAfterPayroll)} (${status})`, { breakdown: b }, at(3));
-  log(s, 'AGENT', 'AI_OUTPUT', s.aiDown ? 'AI unavailable: rules-based explanation and template drafts used' : 'SEA-LION explained the result and ranked the actions', { model: s.aiDown ? 'none' : F.AI_MODEL, isFallback: s.aiDown }, at(4));
+  log(s, 'AGENT', 'DATA_READ', `Read payroll from Orbyte People: ${F.PAYROLL.headcount} staff, ${formatMoney(F.PAYROLL.total)}`, { Source: 'Orbyte People' }, at(1));
+  log(s, 'AGENT', 'DATA_READ', `Read bank balance, ${s.receivables.length} invoices, ${s.bills.length} bills and POS sales from Orbyte Connect`, { Source: 'Orbyte Connect' }, at(2));
+  log(s, 'SYSTEM', 'PROJECTION', `Projected balance after payroll: ${formatMoney(b.projectedAfterPayroll)} (${STATUS_WORDS[status]})`, {
+    'Bank balance': formatMoney(b.currentBalance),
+    'Sales to payday': formatMoney(b.expectedSales),
+    'Invoices in': formatMoney(b.expectedReceivables),
+    'Bills out': formatMoney(b.billsDue),
+    'Purchases out': formatMoney(b.purchasesDue),
+    'Payroll': formatMoney(F.PAYROLL.total),
+    'Computed by': 'Rules in code, not by AI',
+  }, at(3));
+  log(s, 'AGENT', 'AI_OUTPUT', s.aiDown ? 'AI unavailable: rules-based explanation and template drafts used' : 'SEA-LION explained the result and ranked the actions', { Model: s.aiDown ? 'none' : F.AI_MODEL, Fallback: s.aiDown ? 'yes' : 'no' }, at(4));
 }
 
 function initialState(): State {
@@ -280,7 +297,7 @@ export function submitAction(id: string, role: Role, drafts?: DraftMessage[]): A
   if (action.status !== 'PROPOSED') throw new ApiError(409, 'This action is already waiting for approval.');
   if (drafts) action.drafts = drafts;
   action.status = 'PENDING_APPROVAL';
-  log(state, role, 'ACTION_SUBMITTED', `Submitted "${withImpact(state, action).title}" for the Owner's approval`, { actionId: id, drafts: drafts?.length ?? 0 });
+  log(state, role, 'ACTION_SUBMITTED', `Submitted "${withImpact(state, action).title}" for the Owner's approval`, { Action: id, 'Messages attached': drafts?.length ?? 0 });
   return withImpact(state, action);
 }
 
@@ -295,16 +312,20 @@ export function approveAction(id: string, role: Role, drafts?: DraftMessage[]): 
   }
   const title = withImpact(state, action).title;
   action.status = 'APPROVED';
-  log(state, role, 'ACTION_APPROVED', `Approved "${title}"`, { actionId: id, relatedIds: action.relatedIds });
+  log(state, role, 'ACTION_APPROVED', `Approved "${title}"`, { Action: id, Items: action.relatedIds });
   applyEffect(state, action);
+  if (action.type === 'CHASE_RECEIVABLE') {
+    const at = now();
+    state.receivables = state.receivables.map((r) => (action.relatedIds.includes(r.id) ? { ...r, lastContactAt: at } : r));
+  }
   action.status = 'EXECUTED';
-  state.changedSinceStart = true;
+  refreshExplanation();
   const done: Record<ActionType, string> = {
     CHASE_RECEIVABLE: `${action.relatedIds.length} reminder${action.relatedIds.length === 1 ? '' : 's'} queued for sending (demo: nothing is actually sent)`,
     RESCHEDULE_BILL: `Bill ${action.relatedIds.join(', ')} moved to its later due date in Orbyte Connect`,
     HOLD_PURCHASE: `Purchase order ${action.relatedIds.join(', ')} rescheduled to after payday`,
   };
-  log(state, 'SYSTEM', 'ACTION_EXECUTED', done[action.type], { actionId: id });
+  log(state, 'SYSTEM', 'ACTION_EXECUTED', done[action.type], { Action: id });
   return withImpact(state, action);
 }
 
@@ -313,7 +334,7 @@ export function rejectAction(id: string, role: Role, reason: string): Action {
   if (!reason.trim()) throw new ApiError(400, 'Please give a short reason.');
   const action = findOpenAction(id);
   action.status = 'REJECTED';
-  log(state, role, 'ACTION_REJECTED', `Rejected "${withImpact(state, action).title}"`, { actionId: id, reason: reason.trim() });
+  log(state, role, 'ACTION_REJECTED', `Rejected "${withImpact(state, action).title}"`, { Action: id, Reason: reason.trim() });
   return withImpact(state, action);
 }
 
@@ -322,7 +343,7 @@ export function regenerateDraft(receivableId: string, language: Language, role: 
   const version = key in state.draftVersion ? state.draftVersion[key] + 1 : 0;
   state.draftVersion[key] = version;
   const draft = draftFor(state, receivableId, language, version);
-  log(state, role, 'DRAFT_GENERATED', `${draft.isFallback ? 'Template' : 'AI'} ${language} reminder drafted for ${receivableId}`, { isFallback: draft.isFallback });
+  log(state, role, 'DRAFT_GENERATED', `${draft.isFallback ? 'Template' : 'AI'} ${language} reminder drafted for ${receivableId}`, { Fallback: draft.isFallback ? 'yes' : 'no' });
   return draft;
 }
 
@@ -337,9 +358,16 @@ export const getSettings = (): Settings => state.settings;
 export function updateSettings(role: Role, next: Settings): Settings {
   requireRole(role, 'OWNER', 'Only the Owner can change settings.');
   if (next.paydayDayOfMonth < 1 || next.paydayDayOfMonth > 28) throw new ApiError(400, 'Payday must be between day 1 and 28.');
-  if (next.safetyBuffer < 0 || next.leadTimeDays < 1) throw new ApiError(400, 'Please check the numbers.');
+  if (next.safetyBuffer < 0 || next.leadTimeDays < 1 || next.leadTimeDays > 30) throw new ApiError(400, 'Lead time must be 1 to 30 days and the buffer cannot be negative.');
   state.settings = { ...next };
-  log(state, role, 'SETTINGS_CHANGED', 'Cash Guard settings updated', { settings: next });
+  log(state, role, 'SETTINGS_CHANGED', 'Cash Guard settings updated', {
+    'Payday': `day ${next.paydayDayOfMonth} of the month`,
+    'Alert lead time': `${next.leadTimeDays} days`,
+    'Safety buffer': formatMoney(next.safetyBuffer),
+    'Message language': next.defaultLanguage,
+    'Actions allowed': next.enabledActions.join(', '),
+  });
+  refreshExplanation();
   return state.settings;
 }
 
@@ -348,14 +376,17 @@ export function simulatePayments(): void {
   const total = round2(paid.reduce((t, r) => t + r.amount, 0));
   state.balance = round2(state.balance + total);
   state.receivables = state.receivables.filter((r) => !isOverdue(r));
-  state.changedSinceStart = true;
-  log(state, 'SYSTEM', 'DEMO_SIMULATION', `Demo: ${paid.length} overdue invoices paid in full (${formatMoney(total)})`, { paid: paid.map((r) => r.id) });
+  refreshExplanation();
+  log(state, 'SYSTEM', 'DEMO_SIMULATION', `Demo: ${paid.length} overdue invoices paid in full (${formatMoney(total)})`, { 'Paid invoices': paid.map((r) => r.id) });
 }
 
 export function simulateAiDown(): void {
   state.aiDown = true;
   state.actions.filter((a) => a.type === 'CHASE_RECEIVABLE' && OPEN.includes(a.status))
-    .forEach((a) => { a.drafts = a.relatedIds.map((id) => draftFor(state, id, state.settings.defaultLanguage, 0)); });
+    .forEach((a) => {
+      const unpaid = a.relatedIds.filter((id) => state.receivables.some((r) => r.id === id)); // paid invoices are gone
+      a.drafts = unpaid.map((id) => draftFor(state, id, state.settings.defaultLanguage, 0));
+    });
   log(state, 'SYSTEM', 'DEMO_SIMULATION', 'Demo: AI marked unavailable, rules-based fallback in use');
 }
 
