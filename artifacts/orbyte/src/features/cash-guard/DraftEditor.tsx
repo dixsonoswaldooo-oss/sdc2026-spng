@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { regenerateDraft } from '@/api/client';
 import type { DraftMessage, Language } from '@/api/types';
 import { AiBadge } from '@/components/AiBadge';
+import { USE_MOCK } from '@/lib/env';
 
 interface Props {
   actionId: string;
@@ -52,6 +53,7 @@ export function DraftEditor({ actionId, customer, draft, editable, onChange }: P
           {draft.channel === 'WHATSAPP' ? 'WhatsApp' : 'Email'}
         </span>
         <AiBadge fallback={draft.isFallback} />
+        {USE_MOCK && !draft.isFallback && <span className="text-xs text-muted">Sample draft</span>}
         <div role="group" aria-label={`Language for ${customer}`} className="ml-auto flex rounded-input border border-line p-0.5">
           {LANGUAGES.map((lang) => (
             <button

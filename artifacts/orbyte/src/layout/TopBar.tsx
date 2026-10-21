@@ -1,6 +1,7 @@
-import { Coins, Menu } from 'lucide-react';
+import { Coins, FlaskConical, Menu } from 'lucide-react';
 import { getWorkspace } from '@/api/client';
 import type { Role } from '@/api/types';
+import { USE_MOCK } from '@/lib/env';
 import { ROLE_LABELS, useRole } from '@/lib/role';
 
 export function TopBar({ onOpenMenu }: { onOpenMenu: () => void }) {
@@ -14,6 +15,16 @@ export function TopBar({ onOpenMenu }: { onOpenMenu: () => void }) {
         <Menu className="size-5" aria-hidden="true" />
       </button>
       <p className="min-w-0 flex-1 truncate text-sm font-medium">{workspace.companyName}</p>
+
+      {USE_MOCK && (
+        <span
+          title="Sample data and sample AI text. Not connected to the backend yet."
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-at-risk/40 bg-at-risk/10 px-2.5 py-1 text-xs font-medium text-at-risk"
+        >
+          <FlaskConical className="size-3.5" aria-hidden="true" />
+          Demo data
+        </span>
+      )}
 
       <span className="hidden items-center gap-1.5 rounded-full border border-line px-2.5 py-1 text-xs text-muted sm:inline-flex">
         <Coins className="size-3.5" aria-hidden="true" />
