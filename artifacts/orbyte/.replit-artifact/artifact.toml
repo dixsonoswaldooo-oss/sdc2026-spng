@@ -26,3 +26,6 @@ to = "/index.html"
 [services.env]
 PORT = "24529"
 BASE_PATH = "/"
+# Public demo settings (not secrets): built-in demo data, Demo button visible.
+VITE_USE_MOCK = "true"
+VITE_DEMO_MODE = "true"
