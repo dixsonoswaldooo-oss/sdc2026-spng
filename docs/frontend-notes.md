@@ -31,6 +31,31 @@ Set in `artifacts/orbyte/.replit-artifact/artifact.toml` under `[services.env]`.
 | `VITE_API_BASE_URL` | Backend address when demo data is off. Empty means "the same server" (`/api`). | Same server |
 | `VITE_DEMO_MODE` | `true`: show the floating Demo button (bottom-right). | Button hidden |
 
+## Changing the demo data (Google Sheet)
+
+The demo reads its data from this Google Sheet:
+https://docs.google.com/spreadsheets/d/1dkh9segLmkkAti3YY4dVHjWnJU2PVeS_HFPdFVBg9vk/edit
+
+Change anything, then refresh the website (or press Demo → Reload from Google Sheet). Everything on screen follows:
+status, chart, what-if, actions, their wording and the AI explanation.
+
+| Tab | What it holds |
+|---|---|
+| Settings | Company and people names, credits, demo date, check time, payday, buffer, bank balance, daily sales, payroll, staff count, which actions are allowed, and (optional) the AI explanation text. Column C explains each row. |
+| Invoices | One row per customer invoice. Overdue = due date before "Demo today". "Message EN/BM" is optional; empty means a message is written from the data. |
+| Bills | One row per bill. Fill "Can move to" only if the supplier allows a later date without penalty; that bill can then be suggested for moving. |
+| Orders | One row per purchase order. Urgent = no and a "Can wait until" after payday makes it a "hold" suggestion. |
+
+Rules: keep the column names in row 1; add or delete rows freely; rename tabs if you like, but do not delete and re-create a tab
+(the website finds tabs by their fixed ID). The sheet must stay shared as "Anyone with the link can view".
+If a cell is wrong (for example letters in "Amount"), the website shows the built-in data and a message such as
+*"Invoices tab, row 3: "Amount" must be an amount like 2600 or RM 2,600.00"*. Fix the cell and press "Read the sheet again".
+
+Under the hood: `src/mocks/sheet.ts` reads the 4 tabs as CSV, checks every value and builds a "scenario";
+`src/mocks/engine.ts` runs on it; `src/mocks/aiText.ts` writes the sample AI wording from the numbers.
+The sheet is chosen by `VITE_SHEET_ID` in `.replit-artifact/artifact.toml` (remove it to use the built-in data).
+`src/mocks/sheetTemplate.ts` is the sheet's layout; a test proves it gives exactly the built-in numbers.
+
 ## Is the AI connected? (read this before the demo)
 
 **Not yet.** With `VITE_USE_MOCK = "true"` the website runs on demo data. The AI explanation, the action ranking and the

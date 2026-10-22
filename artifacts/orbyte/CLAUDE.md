@@ -61,7 +61,7 @@ Windows only: the repo strips Windows build binaries (Replit is Linux). If `vite
 
 - All data access goes through `src/api/client.ts`. Components never call `fetch` directly.
 - Two modes, switched by env var (set in `.replit-artifact/artifact.toml` under `[services.env]`):
-  - `VITE_USE_MOCK=true` → data comes from `src/mocks/` (fixtures + a small fake engine that imitates the backend).
+  - `VITE_USE_MOCK=true` → data comes from `src/mocks/`: the Google Sheet in `VITE_SHEET_ID` (read by `sheet.ts`), else the built-in fixtures, run by a small fake engine that imitates the backend.
   - `VITE_USE_MOCK=false` → real calls to `VITE_API_BASE_URL` (empty = same address, `/api/...`).
 - The API contract and TypeScript types live in `src/api/types.ts` and must match `/docs/frontend-api-contract.md`. When you change one, update the other in the same commit.
 - Money and cash projections are **computed by the backend**. In mock mode, the only place allowed to compute numbers is `src/mocks/engine.ts`. UI components only format and display.

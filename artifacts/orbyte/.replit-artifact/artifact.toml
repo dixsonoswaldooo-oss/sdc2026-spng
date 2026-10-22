@@ -26,6 +26,8 @@ to = "/index.html"
 [services.env]
 PORT = "24529"
 BASE_PATH = "/"
-# Public demo settings (not secrets): built-in demo data, Demo button visible.
+# Public demo settings (not secrets): demo data, Demo button visible.
 VITE_USE_MOCK = "true"
 VITE_DEMO_MODE = "true"
+# Google Sheet with the demo data (shared as "Anyone with the link can view"). Remove the line to use the built-in data.
+VITE_SHEET_ID = "1dkh9segLmkkAti3YY4dVHjWnJU2PVeS_HFPdFVBg9vk"
