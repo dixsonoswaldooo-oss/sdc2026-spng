@@ -36,8 +36,14 @@ Set in `artifacts/orbyte/.replit-artifact/artifact.toml` under `[services.env]`.
 The demo reads its data from this Google Sheet:
 https://docs.google.com/spreadsheets/d/1dkh9segLmkkAti3YY4dVHjWnJU2PVeS_HFPdFVBg9vk/edit
 
-Change anything, then refresh the website (or press Demo → Reload from Google Sheet). Everything on screen follows:
-status, chart, what-if, actions, their wording and the AI explanation.
+Change anything and the website picks it up by itself: it checks the sheet every 15 seconds and whenever you
+switch back to its tab. Everything on screen follows: status, chart, what-if, actions, their wording and the AI explanation.
+If someone has already approved or simulated something, the website does not wipe that demo by surprise:
+it shows "Your Google Sheet has changed" with a "Load the new data" button instead.
+
+Good to know: overdue invoices only count once a reminder is approved, so changing an overdue invoice
+(amount or "Likely to pay %") changes the Actions and What if numbers, not the Overview headline.
+Changing the bank balance, sales, payroll, bills or orders changes the headline straight away.
 
 | Tab | What it holds |
 |---|---|

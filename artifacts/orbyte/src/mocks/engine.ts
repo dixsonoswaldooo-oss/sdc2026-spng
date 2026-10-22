@@ -270,6 +270,7 @@ function freeze(action: Action): void {
 // ---------- the "endpoints" ----------
 
 export const getWorkspace = (): Workspace => scenario.workspace;
+export const getScenario = (): Scenario => scenario;
 
 export function getSummary(): CashGuardSummary {
   const b = breakdown(state);
