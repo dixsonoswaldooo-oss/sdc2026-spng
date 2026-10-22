@@ -1,8 +1,8 @@
 import { FileText, House, ListChecks, Plug, ShieldCheck, UserPlus, Users } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
-import { getSummary, getWorkspace } from '@/api/client';
+import { getSummary } from '@/api/client';
 import { STATUS_META } from '@/lib/status';
-import { useApi } from '@/lib/useApi';
+import { useApi, useWorkspace } from '@/lib/useApi';
 
 export const MODULES = [
   { path: '/home', label: 'Home', icon: House },
@@ -20,6 +20,7 @@ const itemState = (active: boolean) => (active ? 'bg-accent/10 font-medium text-
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const [location] = useLocation();
   const summary = useApi(getSummary);
+  const workspace = useWorkspace();
   const status = summary.data && STATUS_META[summary.data.status];
 
   return (
@@ -28,7 +29,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         <p className="text-lg font-semibold tracking-tight">
           orbyte<span className="text-accent">.</span>
         </p>
-        <p className="mt-1 truncate text-xs text-muted">{getWorkspace().shortName}</p>
+        <p className="mt-1 h-4 truncate text-xs text-muted">{workspace?.shortName}</p>
       </div>
 
       <ul className="space-y-0.5">

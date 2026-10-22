@@ -3,6 +3,7 @@ import { useState, type ReactNode } from 'react';
 import { Dialog } from '@/components/Dialog';
 import { DEMO_MODE } from '@/lib/env';
 import { DemoControls } from './DemoControls';
+import { SheetNotice } from './SheetNotice';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
 
@@ -36,7 +37,10 @@ export function OrbyteShell({ children }: { children: ReactNode }) {
 
       <div className="flex min-w-0 flex-col">
         <TopBar onOpenMenu={() => setMenuOpen(true)} />
-        <main id="main" tabIndex={-1} className="mx-auto focus:outline-none w-full max-w-content flex-1 px-4 pb-24 pt-6 sm:px-6 lg:pt-8">{children}</main>
+        <main id="main" tabIndex={-1} className="mx-auto focus:outline-none w-full max-w-content flex-1 px-4 pb-24 pt-6 sm:px-6 lg:pt-8">
+          <SheetNotice />
+          {children}
+        </main>
       </div>
       {DEMO_MODE && <DemoControls />}
     </div>

@@ -1,8 +1,9 @@
 // The only door to data. Mock mode calls the fake engine; real mode calls the backend at /api.
 // Switch with VITE_USE_MOCK (src/lib/env.ts). Components never call fetch directly.
-import { API_BASE_URL, USE_MOCK } from '@/lib/env';
+import { API_BASE_URL, SHEET_ID, USE_MOCK } from '@/lib/env';
 import * as engine from '@/mocks/engine';
-import { WORKSPACE } from '@/mocks/fixtures';
+import { DEFAULT_SCENARIO } from '@/mocks/fixtures';
+import { fetchSheetScenario, SheetError } from '@/mocks/sheet';
 import { ApiError } from './errors';
 import type {
   Action, AuditEvent, Bill, CashGuardSummary, DraftMessage, Language, ProjectionResult, PurchaseOrder,
@@ -39,15 +40,58 @@ const RUN_DELAY_MS = 4000; // brief §7: a mock check takes about 4 seconds
 const STORAGE_KEY = 'cash-guard-demo';
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// Mock data survives a page refresh in this browser tab, so a reload during the demo keeps approvals.
-try {
-  const saved = sessionStorage.getItem(STORAGE_KEY);
-  if (USE_MOCK && saved) engine.importState(saved);
-} catch {
-  // storage blocked (private mode): the demo simply starts fresh
+// ---------- where the demo data comes from: the Google Sheet (VITE_SHEET_ID) or the built-in data ----------
+
+export interface DataSource {
+  kind: 'sheet' | 'builtin';
+  error?: string; // why the sheet could not be used
+}
+
+let source: DataSource = { kind: 'builtin' };
+let ready = false;
+
+async function loadSheet(): Promise<void> {
+  if (!USE_MOCK || !SHEET_ID) return;
+  try {
+    engine.loadScenario(await fetchSheetScenario(SHEET_ID));
+    source = { kind: 'sheet' };
+  } catch (error) {
+    engine.loadScenario(DEFAULT_SCENARIO);
+    source = { kind: 'builtin', error: error instanceof SheetError ? error.message : 'Could not read the Google Sheet.' };
+  }
+}
+
+// Mock data survives a page refresh in this browser tab, so a reload during the demo keeps approvals,
+// unless the sheet has changed since; then the demo starts fresh from the new data.
+const started = (async () => {
+  await loadSheet();
+  try {
+    const saved = sessionStorage.getItem(STORAGE_KEY);
+    if (USE_MOCK && saved && !engine.importState(saved)) sessionStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // storage blocked (private mode) or an old save: the demo simply starts fresh
+  }
+  ready = true;
+  changed();
+})();
+
+export const getDataSource = (): DataSource => source;
+
+/** Reads the Google Sheet again and restarts the demo from it (Demo panel button). */
+export async function reloadFromSheet(): Promise<DataSource> {
+  await started;
+  await loadSheet();
+  try {
+    sessionStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // nothing saved to clear
+  }
+  changed();
+  return source;
 }
 
 async function mock<T>(work: () => T, { delay = MOCK_DELAY_MS, mutates = false } = {}): Promise<T> {
+  await started;
   await sleep(delay);
   const result = structuredClone(work()); // screens get copies, never the engine's own data
   if (mutates) {
@@ -87,7 +131,7 @@ async function http<T>(method: 'GET' | 'POST' | 'PUT', path: string, body?: unkn
 const CG = '/api/cash-guard';
 
 /** The Orbyte workspace around the feature is simulated in both modes. */
-export const getWorkspace = (): Workspace => WORKSPACE;
+export const getWorkspace = (): Workspace | undefined => (ready ? engine.getWorkspace() : undefined); // undefined while the sheet loads
 
 export const getSummary = () =>
   USE_MOCK ? mock(engine.getSummary) : http<CashGuardSummary>('GET', `${CG}/summary`);

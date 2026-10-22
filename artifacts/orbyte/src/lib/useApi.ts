@@ -1,5 +1,17 @@
 import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
-import { getVersion, subscribe } from '@/api/client';
+import { getDataSource, getVersion, getWorkspace, subscribe } from '@/api/client';
+
+/** The mock Orbyte workspace (company, people, credits); updates when the Google Sheet is read. */
+export function useWorkspace() {
+  useSyncExternalStore(subscribe, getVersion);
+  return getWorkspace();
+}
+
+/** Whether the demo runs on the Google Sheet or the built-in data, and why if the sheet failed. */
+export function useDataSource() {
+  useSyncExternalStore(subscribe, getVersion);
+  return getDataSource();
+}
 
 interface ApiState<T> {
   data?: T;

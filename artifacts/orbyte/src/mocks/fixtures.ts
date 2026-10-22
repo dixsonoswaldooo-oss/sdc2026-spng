@@ -1,4 +1,24 @@
-import type { ActionType, Bill, Language, PurchaseOrder, Receivable, Settings, Workspace } from '../api/types.ts';
+import type { Bill, ISODate, Language, Money, PurchaseOrder, Receivable, Settings, Workspace } from '../api/types.ts';
+
+/**
+ * Everything the demo runs on. The built-in one is below (DEFAULT_SCENARIO);
+ * a Google Sheet produces another one with the same shape (src/mocks/sheet.ts).
+ */
+export interface Scenario {
+  workspace: Workspace;
+  today: ISODate;
+  checkedAt: string; // when the daily check ran, ISO date-time
+  settings: Settings;
+  bankBalance: Money;
+  posDailyAverage: Money;
+  payroll: { total: Money; headcount: number };
+  receivables: Receivable[];
+  bills: Bill[];
+  purchaseOrders: PurchaseOrder[];
+  channels: Record<string, 'WHATSAPP' | 'EMAIL'>;
+  drafts: Record<string, Partial<Record<Language, string[]>>>; // written messages; templates fill any gaps
+  aiExplanation?: string; // first explanation; empty means it is written from the data
+}
 
 // Demo scenario (brief §4), all synthetic. Only engine.ts computes numbers from these.
 // PO-077 fix agreed with Owen: the packaging order counts as money out before payday,
@@ -49,13 +69,6 @@ export const PURCHASE_ORDERS: PurchaseOrder[] = [
   { id: 'PO-077', vendor: 'PackRight Sdn Bhd', description: 'Packaging (bags & labels)', amount: 1200, urgent: false, dueDate: '2026-10-22', suggestedDate: '2026-10-27' },
 ];
 
-/** Text the AI returns for each action (ranking, title, reason, confidence). Impacts are computed by the engine. */
-export const ACTION_TEXT: Record<ActionType, { rank: number; title: string; reason: string; confidence: 'LOW' | 'MEDIUM' | 'HIGH' }> = {
-  CHASE_RECEIVABLE: { rank: 1, title: 'Chase 3 overdue invoices', reason: 'RM 9,200.00 is overdue from 3 customers. Collecting most of it closes the payroll gap.', confidence: 'MEDIUM' },
-  RESCHEDULE_BILL: { rank: 2, title: 'Move the Biji Emas bill to 2 Nov', reason: 'Supplier terms allow payment up to 2 Nov with no penalty, so RM 2,600.00 stays in the bank on payday.', confidence: 'HIGH' },
-  HOLD_PURCHASE: { rank: 3, title: 'Order packaging after payday', reason: 'The packaging order is not urgent. Ordering it on 27 Oct keeps RM 1,200.00 in the bank on payday.', confidence: 'HIGH' },
-};
-
 export const AI_MODEL = 'SEA-LION · RunPod';
 
 export const AI_EXPLANATION =
@@ -99,4 +112,20 @@ export const DRAFTS: Record<string, Record<Language, string[]>> = {
       'Hai Cik Nadia, peringatan ringkas bahawa invois INV-1031 (RM 1,600.00, tarikh akhir 13 Okt) masih terbuka. Beritahu kami jika perlukan salinan invois. Terima kasih! — Aina, Kopi Kawan Trading',
     ],
   },
+};
+
+export const DEFAULT_SCENARIO: Scenario = {
+  workspace: WORKSPACE,
+  today: DEMO_TODAY,
+  checkedAt: CHECKED_AT,
+  settings: SETTINGS,
+  bankBalance: BANK_BALANCE,
+  posDailyAverage: POS_DAILY_AVERAGE,
+  payroll: PAYROLL,
+  receivables: RECEIVABLES,
+  bills: BILLS,
+  purchaseOrders: PURCHASE_ORDERS,
+  channels: CHANNELS,
+  drafts: DRAFTS,
+  aiExplanation: AI_EXPLANATION,
 };

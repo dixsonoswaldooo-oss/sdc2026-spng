@@ -1,16 +1,29 @@
-import { CloudOff, FlaskConical, HandCoins, RefreshCw, RotateCcw, X } from 'lucide-react';
+import { CloudOff, FileSpreadsheet, FlaskConical, HandCoins, RefreshCw, RotateCcw, X } from 'lucide-react';
 import { useState } from 'react';
-import { resetDemo, runCheck, simulateAiDown, simulatePayments } from '@/api/client';
+import { reloadFromSheet, resetDemo, runCheck, simulateAiDown, simulatePayments } from '@/api/client';
 import { Dialog } from '@/components/Dialog';
 import { Toast } from '@/components/Toast';
 import { RunProgress } from '@/features/cash-guard/RunProgress';
+import { SHEET_ID } from '@/lib/env';
 
-const CONTROLS = [
+interface Control {
+  id: string;
+  label: string;
+  note: string;
+  icon: typeof RefreshCw;
+  work: () => Promise<unknown>;
+  done: string;
+}
+
+const CONTROLS: Control[] = [
+  ...(SHEET_ID
+    ? [{ id: 'sheet', label: 'Reload from Google Sheet', note: 'Reads your sheet again and restarts the demo from it.', icon: FileSpreadsheet, work: reloadFromSheet, done: 'Google Sheet read. If something is wrong in it, a message at the top says where.' }]
+    : []),
   { id: 'run', label: 'Run check now', note: 'Runs the agent again: reads data, projects cash, asks the AI.', icon: RefreshCw, work: runCheck, done: 'Check finished. Every screen is up to date.' },
   { id: 'pay', label: 'Simulate: customers pay', note: 'All overdue invoices are paid in full today.', icon: HandCoins, work: simulatePayments, done: 'Overdue invoices paid. See the new status on Overview.' },
   { id: 'ai', label: 'Simulate: AI unavailable', note: 'Shows the rules-based fallback with its badge.', icon: CloudOff, work: simulateAiDown, done: 'AI marked unavailable. Fallback text is now shown.' },
-  { id: 'reset', label: 'Reset demo data', note: 'Back to the start of the story (21 Oct, shortfall).', icon: RotateCcw, work: resetDemo, done: 'Demo data reset.' },
-] as const;
+  { id: 'reset', label: 'Reset demo data', note: 'Back to the start of the story, keeping the current data source.', icon: RotateCcw, work: resetDemo, done: 'Demo data reset.' },
+];
 
 /** Floating "Demo" button for the presenter (only when VITE_DEMO_MODE=true). */
 export function DemoControls() {
@@ -19,7 +32,7 @@ export function DemoControls() {
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
-  const trigger = async (control: (typeof CONTROLS)[number]) => {
+  const trigger = async (control: Control) => {
     setBusy(control.id);
     setError(null);
     try {
