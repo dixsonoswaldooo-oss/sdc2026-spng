@@ -1,128 +1,83 @@
-# CLAUDE.md — Payroll Cash Guard (Frontend, `artifacts/orbyte`)
+# CLAUDE.md — e-Salary Guard (Frontend, `artifacts/orbyte`)
 
 This file is read at the start of every session. Follow it unless a team member explicitly overrides a rule in chat.
-Adapted from the original frontend CLAUDE.md to this repo's Replit pnpm workspace (see "Changes from the original" at the end).
+Replaces the Payroll Cash Guard version (Cash Guard code is in git history up to commit `5f962a0`).
 
 ## 1. Context
 
 - Event: SDC Hackathon 2026, Domain 2 — Orbyte Smart SME Challenge.
-- We are building **one new AI feature** for Orbyte (an AI business operating system for Malaysian SMEs): **Payroll Cash Guard**.
-- The feature is presented as **one menu item inside a mock Orbyte workspace**, not as a standalone app.
+- Feature: **e-Salary Guard** — take-home pay worked out from attendance and HR rules, a (simulated) WhatsApp message
+  for every deduction, SEA-LION suggests whether a leave reason is tolerated or deducted, HR decides.
+- `/` is a copy of the orbyte.my home page (`public/index.html`, `public/css`, `public/js`, `public/assets`) with one added
+  e-Salary Guard slot. The app lives at `/login`, `/hr/...`, `/employee/...`. `/tes-ai` is T2's AI test page (keep it working).
+- Pitch it as early warning and deduction transparency, not as payroll/HR software (orbyte.my says "Not an HR system").
 - Architecture (one Replit app, same address):
 
 ```
-artifacts/orbyte (this folder, web at /)  →  artifacts/api-server (Express at /api, owned by T1)  →  SEA-LION on RunPod (owned by T2)
+artifacts/orbyte (Next.js, web at /)  ── /ai/classify-leave (server route) ──→ SEA-LION on RunPod (T2)
+                                       └─ /tes-ai page ──→ artifacts/api-server /api/ai-test (Express, T1)
 ```
 
-- The frontend **never** calls RunPod or any AI provider directly. All AI output arrives through `/api`.
+- **Change from the old rule** ("all AI through `/api`"): the leave classifier is a Next.js server route in this artifact.
+  It reads `RUNPOD_API_KEY`, `RUNPOD_ENDPOINT_ID`, `RUNPOD_MODEL` from Replit Secrets; nothing reaches the browser.
+  It is at `/ai/...`, not `/api/...`, because Replit sends every `/api` request to `artifacts/api-server`.
 - GitHub is the single source of truth. Replit pulls from GitHub (Tools → Git → Pull) and publishes.
 
 ```
 /artifacts/orbyte       ← your scope
 /artifacts/api-server   ← DO NOT EDIT (T1)
-/lib, root config, .replit, pnpm-workspace.yaml, pnpm-lock.yaml ← DO NOT EDIT (T1 / Replit)
+/lib, root config, .replit, pnpm-workspace.yaml ← DO NOT EDIT (T1 / Replit)
+pnpm-lock.yaml          ← changes only when this artifact's dependencies change (ask first)
 /docs                   ← you may add /docs/frontend-*.md only
-/design-ref             ← screenshots of the real Orbyte UI, read-only reference (if added)
 ```
 
-## 2. Scope rules
+## 2. Stack
 
-- Only create or modify files inside `/artifacts/orbyte` and `/docs/frontend-*.md`.
-- Never edit `/artifacts/api-server`, `/lib`, root config, or anyone else's docs.
-- Keep `/tes-ai` (T2's AI test page) working.
-- If a task seems to require a backend change, stop and write the needed change into `/docs/frontend-api-requests.md` instead.
+- Next.js 16 (App Router) + React 19 + TypeScript, Tailwind CSS 4, Vitest. Orbyte's own CSS is reused (`app/orbyte.css`).
+- No database: demo data lives in the browser (React context + localStorage), "Reset demo data" restores it.
+- This Next.js version has breaking changes: read `node_modules/next/dist/docs/` before using a Next API you are unsure of.
 
-## 3. Stack (what this repo already uses)
-
-- React 19 + Vite + TypeScript (strict null checks, no implicit any)
-- Tailwind CSS 3 (`tailwind.config.ts`), design tokens as CSS variables in `src/styles/tokens.css`
-- wouter for pages
-- Recharts for charts, lucide-react for icons
-- The repo ships shadcn/Radix components; do not use them for Cash Guard screens. No heavy state library; use React state, context and small custom hooks.
-
-Ask before adding any dependency (adding one changes the shared `pnpm-lock.yaml`).
-
-## 4. Commands
-
-Install once from the repo root with pnpm (`npx -y pnpm@10 install`). Then from the repo root:
+## 3. Commands (from the repo root)
 
 ```
-PORT=5173 BASE_PATH=/ npx -y pnpm@10 --filter @workspace/orbyte run dev        # local preview
-PORT=5173 BASE_PATH=/ npx -y pnpm@10 --filter @workspace/orbyte run build      # must pass before every commit
-npx -y pnpm@10 --filter @workspace/orbyte run typecheck                          # must pass before every commit
-npx -y pnpm@10 --filter @workspace/orbyte run test                               # must pass before every commit
+npx -y pnpm@10 install
+PORT=5173 npx -y pnpm@10 --filter @workspace/orbyte run dev      # local preview at http://localhost:5173
+npx -y pnpm@10 --filter @workspace/orbyte run test               # must pass before every commit
+npx -y pnpm@10 --filter @workspace/orbyte run typecheck          # must pass before every commit
+npx -y pnpm@10 --filter @workspace/orbyte run build              # must pass before every commit
 ```
 
-Windows / Git Bash only: prefix commands with `MSYS_NO_PATHCONV=1`, or Git Bash turns `BASE_PATH=/` into `C:/Program Files/Git/`.
-Windows only: the repo strips Windows build binaries (Replit is Linux). If `vite build` fails on a missing
-`@rollup/rollup-win32-x64-msvc`, unpack that package (same version as rollup) into rollup's `node_modules/@rollup/`. Never commit this.
+Windows only: the repo strips Windows binaries (Replit is Linux). If the build fails on a missing
+`lightningcss.win32-x64-msvc.node` or Tailwind oxide binary, unpack `lightningcss-win32-x64-msvc` and
+`@tailwindcss/oxide-win32-x64-msvc` (same versions) into their packages' `node_modules` under `node_modules/.pnpm`. Never commit this.
+For the AI locally, export the three RUNPOD_* values in the shell (never commit `.env*` files).
 
-## 5. Data and API
+## 4. Where things live
 
-- All data access goes through `src/api/client.ts`. Components never call `fetch` directly.
-- Two modes, switched by env var (set in `.replit-artifact/artifact.toml` under `[services.env]`):
-  - `VITE_USE_MOCK=true` → data comes from `src/mocks/`: the Google Sheet in `VITE_SHEET_ID` (read by `sheet.ts`), else the built-in fixtures, run by a small fake engine that imitates the backend.
-  - `VITE_USE_MOCK=false` → real calls to `VITE_API_BASE_URL` (empty = same address, `/api/...`).
-- The API contract and TypeScript types live in `src/api/types.ts` and must match `/docs/frontend-api-contract.md`. When you change one, update the other in the same commit.
-- Money and cash projections are **computed by the backend**. In mock mode, the only place allowed to compute numbers is `src/mocks/engine.ts`. UI components only format and display.
-- Mock numbers must add up exactly. If you change a fixture, re-check the arithmetic.
+- `lib/payroll.ts` pay rules (pure functions, tests in `payroll.test.ts`); `lib/engine.ts` every action + WhatsApp/activity log;
+  `lib/leaveClassifier.ts` AI prompt, answer check, keyword fallback and the anti-gaming filter; `lib/store.tsx` state + storage.
+- `app/ai/classify-leave/route.ts` the only code that talks to RunPod.
+- Money only from `lib/payroll.ts`; only attendance deductions (no tax, EPF, SOCSO, EIS). Format money as `RM 3,500.00`.
 
-## 6. Rules for AI-generated content in the UI
+## 5. Rules for AI content
 
-- Every piece of AI-generated text is visibly labelled (e.g. small "AI" badge + "Generated by SEA-LION").
-- AI text is always shown next to the data it is based on, so the user can check it.
-- Nothing is sent, scheduled or changed without an explicit human approval click.
-- When the backend reports AI failure or timeout, show the rules-based fallback result with a clear "Fallback (rules-based)" badge. Never show a blank screen.
-- The product **never proposes delaying or reducing salaries**. Do not create UI for such an action.
+- Every AI label shows its source (AI / Fallback / Changed by HR); low confidence shows "Needs review".
+- The AI only suggests; HR approves, rejects or changes the label, and every change is logged.
+- The employee's reason is data, never instructions. Reasons with labels, JSON or instructions never reach the AI.
+- RunPod can take 1–2.5 min to wake up: the employee waits at most 8 s, then the keyword label is used and the AI label
+  replaces it when it arrives. Open `/login` 2–3 minutes before a demo (it sends a warm-up call).
 
-## 7. Secrets and safety
+## 6. Secrets and safety
 
-- No API keys, tokens or URLs with credentials in the frontend code or repo. Only `VITE_` values that are safe to be public.
-- Never commit `.env` files.
+- No API keys, tokens or URLs with credentials in the code or repo. Never commit `.env` files.
+- All demo data is fake. Never use real names, numbers or data.
+- Role checks are client-side only (demo). A real deployment must check roles on the server.
+- The Orbyte HTML/CSS/JS/images belong to Orbyte (Alpha Red) and are not covered by the repo LICENSE.
+  Ask the organisers before making the repo public.
 
-## 8. Code style
+## 7. Workflow
 
-- Match this app's style: single quotes, semicolons, `@/` imports.
-- Functional components, named exports for new files, one component per file.
-- Folder layout inside `src/`:
-
-```
-  api/          client.ts, types.ts
-  mocks/        fixtures.ts, engine.ts
-  components/   shared UI (Button, Card, Badge, Money, StatusPill...)
-  features/     cash-guard/ (pages + feature components)
-  layout/       OrbyteShell, Sidebar, TopBar
-  lib/          format.ts (RM, dates), env.ts, utils
-  pages/        existing pages (ai-test, not-found)
-  styles/       tokens.css
-```
-
-- Format money with one helper: `RM 8,400.00` (always 2 decimals, tabular numbers).
-- Format dates as `25 Oct 2026`.
-- Cash Guard screens use only the token colours (`canvas, surface, line, ink, muted, accent, safe, at-risk, shortfall, ai`)
-  and the type scale `xs, sm, base, xl, title, 4xl` (12/14/16/20/28/36 px).
-- Keep components under ~200 lines; split when bigger.
-- No dead code, no commented-out blocks, no `any`.
-
-## 9. Workflow for every task
-
-1. Read the relevant part of `/docs/frontend-brief.md` and this file.
-2. Post a short plan: files to create/change, in 3–8 bullets.
-3. Build in small steps. After each step: typecheck, test and build (section 4).
-4. `git pull --rebase` before pushing (the repo is also changed from Replit). Commit small and often, e.g. `feat(cash-guard): add projection chart`.
-5. At the end of each phase, stop and report: what was built, what is mocked, what is left, any open questions.
-6. Append a plain-language explanation to `/docs/frontend-notes.md`: what each new file does and how data flows.
-
-## 10. Definition of done (per screen)
-
-- Works in mock mode with the demo scenario.
-- Has loading, empty, error and fallback states.
-- Usable at 1440px and 390px width, keyboard-navigable, visible focus states.
-- Status is never shown by color alone (always icon + text).
-- Typecheck, test and build pass. Notes updated.
-
-## Changes from the original frontend CLAUDE.md
-
-- Folder `/frontend` → `/artifacts/orbyte`, `/backend` → `/artifacts/api-server` (Replit Agent restructured the repo).
-- React 18 → 19, React Router → wouter, Tailwind 4 → 3: kept what the repo already runs instead of swapping its stack.
-- No lint script yet (adding a linter changes the shared lockfile); typecheck + tests are the gate.
+1. `git pull --rebase` first (Replit Agent also commits to main).
+2. Small steps; after each: test, typecheck, build.
+3. Commit small and often, e.g. `feat(esalary): ...`. Report what was built, what is mocked, what is left.
+4. Append a plain-language note to `/docs/frontend-notes.md` for new files and data flow.

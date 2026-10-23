@@ -1,7 +1,7 @@
 kind = "web"
 previewPath = "/"
 title = "Orbyte Plug-in"
-description = "The original Orbyte plug-in starter for SDC Hackathon 2026, Domain 2, preserving its Indonesian introduction and planned workflow."
+description = "Copy of the orbyte.my home page with the e-Salary Guard feature (SDC Hackathon 2026, Domain 2). Next.js app with a server route for the SEA-LION leave classifier."
 version = "1.0.0"
 id = "artifacts/orbyte"
 router = "path"
@@ -15,19 +15,20 @@ localPort = 24529
 run = "pnpm --filter @workspace/orbyte run dev"
 
 [services.production]
-build = [ "pnpm", "--filter", "@workspace/orbyte", "run", "build" ]
-serve = "static"
-publicDir = "artifacts/orbyte/dist/public"
 
-[[services.production.rewrites]]
-from = "/*"
-to = "/index.html"
+[services.production.build]
+args = [ "pnpm", "--filter", "@workspace/orbyte", "run", "build" ]
+
+[services.production.build.env]
+NODE_ENV = "production"
+
+# Next.js runs as a server (not static files) because /ai/classify-leave calls RunPod with keys from Secrets.
+[services.production.run]
+args = [ "pnpm", "--filter", "@workspace/orbyte", "run", "start" ]
+
+[services.production.run.env]
+PORT = "24529"
+NODE_ENV = "production"
 
 [services.env]
 PORT = "24529"
-BASE_PATH = "/"
-# Public demo settings (not secrets): demo data, Demo button visible.
-VITE_USE_MOCK = "true"
-VITE_DEMO_MODE = "true"
-# Google Sheet with the demo data (shared as "Anyone with the link can view"). Remove the line to use the built-in data.
-VITE_SHEET_ID = "1dkh9segLmkkAti3YY4dVHjWnJU2PVeS_HFPdFVBg9vk"

@@ -1,0 +1,41 @@
+/* Orbyte's own stylesheet (copied unchanged from orbyte.my) sits in the base layer,
+   so e-Salary Guard looks like Orbyte and Tailwind utilities can still adjust layout on top. */
+@import "tailwindcss";
+@import "./orbyte.css" layer(base);
+
+@theme inline {
+  --color-navy: var(--navy);
+  --color-navy-deep: var(--navy-deep);
+  --color-royal: var(--royal);
+  --color-royal-dark: var(--royal-dark);
+  --color-sky: var(--sky);
+  --color-cyan: var(--cyan);
+  --color-gray: var(--gray);
+  --color-gray-deep: var(--gray-deep);
+  --color-line: var(--line);
+  --color-muted: var(--muted);
+  --color-text-70: var(--text-70);
+  --color-danger: var(--danger);
+  --color-success: var(--success);
+  --color-warn: var(--warn);
+  --font-sans: var(--sans);
+}
+
+:root {
+  /* Two status colours Orbyte's marketing site does not need but a payroll screen does. */
+  --danger: #c7362b;
+  --success: #138a5e;
+  --warn: #a35a00;
+}
+
+@layer base {
+  /* App screens use smaller headings than Orbyte's marketing pages. */
+  .app h1 { font-size: clamp(1.8rem, 3vw, 2.5rem); }
+  .app h2 { font-size: 1.35rem; letter-spacing: -0.02em; }
+  .app p { max-width: none; }
+  .tabular { font-variant-numeric: tabular-nums; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
+}

@@ -204,3 +204,23 @@ Replit note: Replit Agent switched Replit to Node 20, so `test` now runs through
 
 - Connecting the real AI (see "Is the AI connected?" above). This matters most for the judges.
 - The page script is large (650 kB, mostly the chart library). Fine for the demo; could be split later.
+
+## Switch to e-Salary Guard (24 Oct 2026)
+
+The team changed the feature from Payroll Cash Guard to **e-Salary Guard**. `artifacts/orbyte` now holds a Next.js app
+instead of the Vite Cash Guard app (Cash Guard stays in git history up to commit `5f962a0`; revert this commit to bring it back).
+
+- **What it is:** `/` is a copy of the orbyte.my home page with one e-Salary Guard slot. Sign in at `/login` with a demo
+  account (password `demo`): HR (`/hr/...`) sets the rules, approves leave and overtime, and pays the month in one click;
+  employees (`/employee/...`) see their take-home pay, ask for leave or overtime, and get a WhatsApp-style message for
+  every deduction. All data is fake and lives in the browser.
+- **How the numbers flow:** every action goes through `lib/engine.ts`, which recalculates pay with `lib/payroll.ts`
+  (only attendance deductions), writes the activity log, and creates a message when a deduction appears or changes.
+- **Is the AI connected?** Yes. `app/ai/classify-leave/route.ts` sends the leave reason to SEA-LION on RunPod with the
+  keys from Replit Secrets and returns "tolerated" or "deducted" with a one-line reason. HR always decides. If RunPod is
+  slow (it sleeps when idle), the employee waits at most 8 seconds, then the keyword rules label it and the AI label
+  replaces it when it arrives. Reasons that try to give the AI orders never reach it and go to HR review.
+- **Why `/ai` and not `/api`:** on Replit every `/api` request goes to T1's Express server, so this route uses `/ai`.
+- **`/tes-ai`** (T2's test page) was moved over unchanged; it still calls T1's `/api/ai-test`.
+- **Checks:** 34 automatic tests (pay rules, actions, AI answer handling), typecheck and build. Clicked through the 8 demo
+  scenarios from the spec in Chrome with the real AI.
