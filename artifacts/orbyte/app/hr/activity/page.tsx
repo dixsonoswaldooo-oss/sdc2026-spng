@@ -7,11 +7,11 @@ import { useStore } from '@/lib/store';
 import type { ActivityKind } from '@/lib/types';
 
 const KINDS: [ActivityKind | 'ALL', string][] = [
-  ['ALL', 'All'], ['LOGIN', 'Sign-in'], ['CONFIG', 'Settings'], ['REQUEST', 'Requests'], ['DECISION', 'Decisions'],
+  ['ALL', 'All'], ['LOGIN', 'Sign-in'], ['CONFIG', 'Settings'], ['REQUEST', 'Requests'], ['DECISION', 'Decisions'], ['REVERT', 'Reverts'], ['ATTENDANCE', 'Attendance'],
   ['AI_LABEL', 'AI labels'], ['RECALC', 'Recalculations'], ['WHATSAPP', 'WhatsApp'], ['PAYMENT', 'Payments'], ['SYSTEM', 'System'],
 ];
 const TONE: Partial<Record<ActivityKind, 'royal' | 'success' | 'warn' | 'danger' | 'navy' | 'muted'>> = {
-  DECISION: 'success', AI_LABEL: 'royal', RECALC: 'warn', PAYMENT: 'success', CONFIG: 'navy', WHATSAPP: 'muted',
+  DECISION: 'success', REVERT: 'danger', ATTENDANCE: 'warn', AI_LABEL: 'royal', RECALC: 'warn', PAYMENT: 'success', CONFIG: 'navy', WHATSAPP: 'muted',
 };
 
 export default function ActivityLog() {

@@ -11,7 +11,7 @@ import type { Role } from '@/lib/types';
 
 const NAV: Record<Role, [string, string][]> = {
   HR: [
-    ['/hr', 'Dashboard'], ['/hr/salary', 'Salary controls'], ['/hr/approvals', 'Approvals'], ['/hr/offers', 'Overtime offers'],
+    ['/hr', 'Dashboard'], ['/hr/salary', 'Salary & leave'], ['/hr/approvals', 'Approvals'], ['/hr/attendance', 'Attendance'],
     ['/hr/payroll', 'Payroll'], ['/hr/payments', 'Payment history'], ['/hr/whatsapp', 'WA outbox'], ['/hr/activity', 'Activity log'],
   ],
   EMPLOYEE: [
@@ -21,7 +21,7 @@ const NAV: Record<Role, [string, string][]> = {
 };
 
 export function AppShell({ role, children }: { role: Role; children: ReactNode }) {
-  const { account, signOut, resetDemo } = useStore();
+  const { account, signOut, resetDemo, data } = useStore();
   const router = useRouter();
   const path = usePathname();
   const [scrolled, setScrolled] = useState(false);
@@ -41,6 +41,10 @@ export function AppShell({ role, children }: { role: Role; children: ReactNode }
 
   if (!allowed) return <div className="grid min-h-screen place-items-center text-sm text-muted">Checking access…</div>;
   const home = role === 'HR' ? '/hr' : '/employee';
+  // Everything waiting for HR: requests, cancellation requests and unread updates (withdrawn or edited requests).
+  const forHr = data.leaves.filter((l) => l.status === 'PENDING' || l.cancelRequestedAt).length
+    + data.overtime.filter((o) => o.status === 'REQUESTED' || o.cancelRequestedAt).length
+    + data.notifications.filter((n) => !n.read).length;
 
   return (
     <div className="app flex min-h-screen flex-col">
@@ -83,6 +87,9 @@ export function AppShell({ role, children }: { role: Role; children: ReactNode }
                     className={`-mb-px inline-block border-b-2 py-3 text-[0.85rem] no-underline transition-colors ${active ? 'border-royal font-semibold text-navy' : 'border-transparent text-text-70 hover:text-navy'}`}
                   >
                     {label}
+                    {href === '/hr/approvals' && forHr > 0 && (
+                      <span className="ml-1.5 rounded-full bg-royal px-1.5 py-px text-[0.7rem] font-semibold text-white" aria-label={`${forHr} waiting`}>{forHr}</span>
+                    )}
                   </Link>
                 </li>
               );

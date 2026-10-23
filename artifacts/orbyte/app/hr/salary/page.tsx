@@ -1,8 +1,10 @@
 'use client';
-// Salary controls: pay per employee and global rules, with a live preview before saving.
+// Salary & leave controls: global rules, overtime per division, pay per employee (live preview) and leave allowance.
 import { useState } from 'react';
+import { LeaveAllowance } from '@/components/controls/LeaveAllowance';
+import { OvertimeControls } from '@/components/controls/OvertimeControls';
 import { Badge, Cell, ErrorNote, Money, PageHead, Panel, TABLE, TD, TH } from '@/components/ui';
-import { isPaid, payrollFor } from '@/lib/engine';
+import { attendanceOf, isPaid, payrollFor } from '@/lib/engine';
 import { monthName } from '@/lib/format';
 import { computePayroll } from '@/lib/payroll';
 import { DEMO_MONTH } from '@/lib/seed';
@@ -10,7 +12,7 @@ import { useStore } from '@/lib/store';
 import type { PayrollConfig } from '@/lib/types';
 
 const FIELDS: [keyof PayrollConfig, string, string, number][] = [
-  ['overtimeRatePerHour', 'Overtime rate', 'RM per hour', 0.5],
+  ['overtimeRatePerHour', 'Overtime rate', 'RM per hour · default for every division', 0.5],
   ['lateToleranceMinutes', 'Late tolerance', 'minutes', 1],
   ['lateRatePerMinute', 'Late deduction rate', 'RM per minute beyond tolerance', 0.05],
   ['absentDeductionPct', 'Absence deduction', '% of daily wage per day', 5],
@@ -29,8 +31,9 @@ export default function SalaryControls() {
   const preview = (id: string) => {
     const e = data.employees.find((x) => x.id === id)!;
     return computePayroll({
-      employee: { ...e, baseSalary: pay[id].base, bonus: pay[id].bonus }, month: DEMO_MONTH, config,
-      attendance: data.attendance.filter((a) => a.employeeId === id), leaves: data.leaves.filter((l) => l.employeeId === id),
+      employee: { ...e, baseSalary: pay[id].base, bonus: pay[id].bonus }, month: DEMO_MONTH, today: data.today,
+      config: { ...config, overtimeRatePerHour: data.divisionOvertime[e.division] ?? config.overtimeRatePerHour },
+      attendance: attendanceOf(data, id), leaves: data.leaves.filter((l) => l.employeeId === id),
       overtime: data.overtime.filter((o) => o.employeeId === id),
     });
   };
@@ -46,7 +49,7 @@ export default function SalaryControls() {
 
   return (
     <>
-      <PageHead eyebrow="Salary controls" title="Pay and deduction rules">
+      <PageHead eyebrow="Salary & leave controls" title="Pay, overtime and leave rules">
         Change a number and the preview updates at once. Saving recalculates everyone, sends WhatsApp updates for changed deductions and records it in the activity log.
       </PageHead>
       {locked && <p className="mb-6 rounded-[var(--radius-sm)] bg-gray px-4 py-3 text-sm"><Badge tone="success">{monthName(DEMO_MONTH)} is paid</Badge> <span className="ml-2 text-muted">Its amounts are frozen; changes here apply to the next payroll.</span></p>}
@@ -70,6 +73,8 @@ export default function SalaryControls() {
         <ErrorNote message={error} />
         {saved && !error && <p role="status" className="mt-3 text-sm font-medium text-success">{saved}</p>}
       </Panel>
+
+      <OvertimeControls />
 
       <Panel className="mt-8">
         <h2>Pay per employee</h2>
@@ -106,6 +111,7 @@ export default function SalaryControls() {
           </table>
         </div>
       </Panel>
+      <LeaveAllowance />
       <Cell className="mt-8"><p className="text-sm">Take-home pay = base + bonus + completed overtime − late, absence and unpaid-leave deductions. No tax, EPF, SOCSO or EIS in this demo.</p></Cell>
     </>
   );

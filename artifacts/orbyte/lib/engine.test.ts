@@ -2,8 +2,9 @@ import { describe, expect, it } from 'vitest';
 import * as engine from './engine';
 import { keywordClassify } from './leaveClassifier';
 
-const hr: engine.Ctx = { actor: 'HR: Nur Farah Hanim', now: '2026-10-23T02:00:00.000Z' };
-const as = (name: string): engine.Ctx => ({ actor: name, now: '2026-10-23T03:00:00.000Z' });
+// 1 Nov 2026 in Malaysia: the whole of October has happened (new rules for days still to come are in flexibility.test.ts).
+const hr: engine.Ctx = { actor: 'HR: Nur Farah Hanim', now: '2026-10-31T17:00:00.000Z' };
+const as = (name: string): engine.Ctx => ({ actor: name, now: '2026-10-31T18:00:00.000Z' });
 const net = (d: engine.Data, id: string) => engine.payrollFor(d, id, '2026-10').netPay;
 
 describe('fresh demo data', () => {
@@ -46,19 +47,19 @@ describe('demo scenarios from the spec', () => {
 
   it('a late AI answer replaces the keyword label, but never HR\'s label or a decided request', () => {
     const reason = 'Anak saya masuk wad, perlu temankan';
-    const d1 = engine.submitLeave(engine.freshData(hr), as('Ahmad Faiz'), 'E1', { type: 'LEAVE', startDate: '2026-10-29', endDate: '2026-10-29', reason }, keywordClassify('LEAVE', reason));
+    const d1 = engine.submitLeave(engine.freshData(hr), as('Ahmad Faiz'), 'E1', { type: 'LEAVE', startDate: '2026-10-29', endDate: '2026-10-29', reason }, keywordClassify('LEAVE', reason), true);
     const id = d1.leaves[0].id;
     expect([d1.leaves[0].label, d1.leaves[0].labelSource]).toEqual(['DIPOTONG', 'Fallback']); // "wad" is not a keyword
     const ai = { label: 'DITOLERANSI', alasan: 'A child in hospital needs a parent.', keyakinan: 0.9, source: 'AI' } as const;
 
-    const late = engine.applyAiLabel(d1, as('Ahmad Faiz'), id, ai).leaves[0];
+    const late = engine.applyAiLabel(d1, as('Ahmad Faiz'), id, ai, reason).leaves[0];
     expect([late.label, late.labelSource, late.confidence]).toEqual(['DITOLERANSI', 'AI', 0.9]);
 
     const byHr = engine.setLeaveLabel(d1, hr, id, 'DITOLERANSI');
-    const afterHr = engine.applyAiLabel(byHr, hr, id, { ...ai, label: 'DIPOTONG' }).leaves[0];
+    const afterHr = engine.applyAiLabel(byHr, hr, id, { ...ai, label: 'DIPOTONG' }, reason).leaves[0];
     expect([afterHr.label, afterHr.labelSource]).toEqual(['DITOLERANSI', 'HR']);
     const decided = engine.decideLeave(d1, hr, id, false);
-    expect(engine.applyAiLabel(decided, hr, id, ai).leaves[0].labelSource).toBe('Fallback');
+    expect(engine.applyAiLabel(decided, hr, id, ai, reason).leaves[0].labelSource).toBe('Fallback');
   });
 
   it('5. employee asks for 3 h overtime → HR approves → done → pay goes up', () => {

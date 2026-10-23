@@ -39,14 +39,16 @@ export interface PayrollInput {
   attendance: AttendanceRecord[]; // this employee's records
   leaves: LeaveRequest[]; // this employee's requests (any status)
   overtime: Overtime[]; // this employee's overtime (any status)
+  today?: ISODate; // days from today on have not happened yet: no attendance to judge (omit = the whole month is over)
 }
 
 /**
  * Salary for one employee for one month, with every component and each deduction event (for display and WhatsApp).
  * Rules: an APPROVED leave covers its days (the person was on leave): TOLERATED → no cut, not absent; DEDUCTED → leave cut.
- * Any other working day without a clock-in is absent (no leave, or leave pending/rejected).
+ * Any other past working day without a clock-in is absent (no leave, or leave pending/rejected), unless HR marked it izin.
+ * Days that have not happened yet are not judged: the result is an estimate until the month is over.
  */
-export function computePayroll({ employee, month, config, attendance, leaves, overtime }: PayrollInput): PayrollBreakdown {
+export function computePayroll({ employee, month, config, attendance, leaves, overtime, today }: PayrollInput): PayrollBreakdown {
   const days = workingDays(month);
   const dailyWage = employee.baseSalary / days.length;
   const byDate = new Map(attendance.map((a) => [a.date, a]));
@@ -65,7 +67,9 @@ export function computePayroll({ employee, month, config, attendance, leaves, ov
       }
       continue;
     }
+    if (today && day >= today) continue;
     const record = byDate.get(day);
+    if (record?.izin) continue;
     if (!record?.clockIn) {
       events.push({
         key: `ABSENT:${day}`, date: day, kind: 'ABSENT', amount: toSen(dailyWage * (config.absentDeductionPct / 100)),

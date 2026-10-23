@@ -1,22 +1,20 @@
 'use client';
-// Overtime and leave requests, with the history and the AI/HR label for leave.
-import { useState, type FormEvent } from 'react';
-import { LabelBadge, LEAVE_TYPE, OT_STATUS, STATUS_TONE } from '@/components/requests';
-import { Badge, Empty, ErrorNote, PageHead, Panel, TABLE, TD, TH } from '@/components/ui';
-import { LABEL_WORDS } from '@/lib/engine';
-import { date } from '@/lib/format';
+// Overtime and leave requests. Sending is instant: the AI reads a leave reason in the background and HR sees its summary.
+import { useRef, useState, type FormEvent } from 'react';
+import { RequestHistory } from '@/components/employee/RequestHistory';
+import { LEAVE_TYPE } from '@/components/requests';
+import { ErrorNote, PageHead, Panel } from '@/components/ui';
 import { useMe } from '@/lib/useMe';
 import type { LeaveType } from '@/lib/types';
 
 export default function Requests() {
-  const { data, me, requestOvertime, submitLeave } = useMe();
+  const { requestOvertime, submitLeave } = useMe();
   const [ot, setOt] = useState({ date: '2026-10-28', hours: 3, note: '' });
   const [lv, setLv] = useState({ type: 'LEAVE' as LeaveType, startDate: '2026-10-29', endDate: '2026-10-29', reason: '' });
   const [otMsg, setOtMsg] = useState<[string, boolean] | null>(null);
   const [lvMsg, setLvMsg] = useState<[string, boolean] | null>(null);
-  const [busy, setBusy] = useState(false);
-  const myLeaves = data.leaves.filter((l) => l.employeeId === me.id);
-  const myOt = data.overtime.filter((o) => o.employeeId === me.id && o.origin === 'EMPLOYEE');
+  const leaveReason = useRef<HTMLTextAreaElement>(null);
+  const otReason = useRef<HTMLTextAreaElement>(null);
 
   const sendOt = (event: FormEvent) => {
     event.preventDefault();
@@ -29,20 +27,21 @@ export default function Requests() {
     }
   };
 
-  const sendLeave = async (event: FormEvent) => {
+  const sendLeave = (event: FormEvent) => {
     event.preventDefault();
-    setBusy(true);
     try {
-      const { ai, aiPending } = await submitLeave(lv);
-      setLvMsg([aiPending
-        ? `Sent to HR. The AI is still waking up, so the keyword rules labelled it ${LABEL_WORDS[ai.label]} for now. The AI's label will replace it in the list below. HR decides.`
-        : `Sent to HR. ${ai.source === 'AI' ? 'AI (SEA-LION)' : 'Fallback rules'} labelled it ${LABEL_WORDS[ai.label]}: ${ai.alasan} HR decides.`, true]);
+      submitLeave(lv);
+      setLvMsg(['Sent to HR. It is waiting for HR’s decision; the AI is reading your reason in the background and HR will see its summary.', true]);
       setLv({ ...lv, reason: '' });
     } catch (e) {
       setLvMsg([(e as Error).message, false]);
-    } finally {
-      setBusy(false);
     }
+  };
+
+  /** A rejected request comes back into the form as a new one. */
+  const prefill = (field: HTMLTextAreaElement | null) => {
+    field?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    field?.focus({ preventScroll: true });
   };
 
   const note = (msg: [string, boolean] | null) => msg && (msg[1] ? <p role="status" className="mt-3 text-sm font-medium text-success">{msg[0]}</p> : <ErrorNote message={msg[0]} />);
@@ -66,10 +65,10 @@ export default function Requests() {
             </div>
             <div className="field">
               <label htmlFor="reason">Reason</label>
-              <textarea id="reason" value={lv.reason} onChange={(e) => setLv({ ...lv, reason: e.target.value })} placeholder="e.g. My child has a high fever and needs to see a doctor." />
+              <textarea id="reason" ref={leaveReason} value={lv.reason} onChange={(e) => setLv({ ...lv, reason: e.target.value })} placeholder="e.g. My child has a high fever and needs to see a doctor." />
               <span className="mt-1 block text-xs text-muted">The AI suggests whether this day is paid (tolerated) or unpaid (deducted). HR makes the final decision.</span>
             </div>
-            <button type="submit" className="btn btn-primary" disabled={busy}>{busy ? 'Reading your reason…' : 'Send request'}</button>
+            <button type="submit" className="btn btn-primary">Send request</button>
             {note(lvMsg)}
           </form>
         </Panel>
@@ -81,7 +80,7 @@ export default function Requests() {
               <div className="field"><label htmlFor="otdate">Date</label><input id="otdate" type="date" value={ot.date} onChange={(e) => setOt({ ...ot, date: e.target.value })} required /></div>
               <div className="field"><label htmlFor="othours">Hours</label><input id="othours" type="number" min={0.5} max={12} step={0.5} value={ot.hours} onChange={(e) => setOt({ ...ot, hours: Number(e.target.value) })} required /></div>
             </div>
-            <div className="field"><label htmlFor="otnote">Reason</label><textarea id="otnote" value={ot.note} onChange={(e) => setOt({ ...ot, note: e.target.value })} required placeholder="e.g. Stock count after closing." /></div>
+            <div className="field"><label htmlFor="otnote">Reason</label><textarea id="otnote" ref={otReason} value={ot.note} onChange={(e) => setOt({ ...ot, note: e.target.value })} required placeholder="e.g. Stock count after closing." /></div>
             <button type="submit" className="btn btn-primary">Send request</button>
             <p className="mt-3 text-xs text-muted">Once approved and worked, mark it done in Overtime offers. Only completed overtime is paid.</p>
             {note(otMsg)}
@@ -91,33 +90,18 @@ export default function Requests() {
 
       <Panel className="mt-8">
         <h2>My requests</h2>
-        {myLeaves.length + myOt.length === 0 ? <div className="mt-4"><Empty>No requests yet.</Empty></div> : (
-          <div className="mt-4 overflow-x-auto">
-            <table className={TABLE}>
-              <thead><tr>{['Type', 'Dates', 'Reason', 'Label', 'Status'].map((h) => <th key={h} className={TH}>{h}</th>)}</tr></thead>
-              <tbody>
-                {myLeaves.map((l) => (
-                  <tr key={l.id}>
-                    <td className={TD}>{LEAVE_TYPE[l.type]}</td>
-                    <td className={TD}>{date(l.startDate)}{l.endDate !== l.startDate && ` – ${date(l.endDate)}`}</td>
-                    <td className={`${TD} max-w-xs`}>“{l.reason}”<span className="mt-1 block text-xs text-muted">{l.labelReason}</span></td>
-                    <td className={TD}><LabelBadge leave={l} /></td>
-                    <td className={TD}><Badge tone={STATUS_TONE[l.status]}>{l.status === 'PENDING' ? 'Waiting for HR' : l.status === 'APPROVED' ? 'Approved' : 'Rejected'}</Badge></td>
-                  </tr>
-                ))}
-                {myOt.map((o) => (
-                  <tr key={o.id}>
-                    <td className={TD}>Overtime</td>
-                    <td className={TD}>{date(o.date)} · {o.hours} h</td>
-                    <td className={`${TD} max-w-xs`}>“{o.note}”</td>
-                    <td className={TD}>—</td>
-                    <td className={TD}><Badge tone={OT_STATUS[o.status][1]}>{OT_STATUS[o.status][0]}</Badge></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <RequestHistory
+          onResubmitLeave={(l) => {
+            setLv({ type: l.type, startDate: l.startDate, endDate: l.endDate, reason: l.reason });
+            setLvMsg(['Copied from your rejected request. Change what you need, then send it as a new request.', true]);
+            prefill(leaveReason.current);
+          }}
+          onResubmitOvertime={(o) => {
+            setOt({ date: o.date, hours: o.hours, note: o.note });
+            setOtMsg(['Copied from your rejected request. Change what you need, then send it as a new request.', true]);
+            prefill(otReason.current);
+          }}
+        />
       </Panel>
     </>
   );

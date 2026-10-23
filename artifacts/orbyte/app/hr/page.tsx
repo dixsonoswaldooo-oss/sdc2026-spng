@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { Badge, Cell, Money, PageHead, Panel, Stat, TABLE, TD, TH } from '@/components/ui';
+import { Badge, Cell, Empty, Money, PageHead, Panel, Stat, TABLE, TD, TH } from '@/components/ui';
 import { isPaid, payrollFor } from '@/lib/engine';
 import { dateTime, monthName, toSen } from '@/lib/format';
 import { DEMO_MONTH } from '@/lib/seed';
@@ -12,9 +12,10 @@ export default function HrDashboard() {
   const { data } = useStore();
   const rows = data.employees.map((e) => ({ e, p: payrollFor(data, e.id, DEMO_MONTH) }));
   const sum = (pick: (p: (typeof rows)[number]['p']) => number) => toSen(rows.reduce((t, r) => t + pick(r.p), 0));
-  const deducted = rows.filter((r) => r.p.totalDeductions > 0);
+  const deducted = rows.filter((r) => r.p.totalDeductions > 0); // the card count and the list below use this same list
   const pendingLeave = data.leaves.filter((l) => l.status === 'PENDING').length;
   const pendingOt = data.overtime.filter((o) => o.status === 'REQUESTED').length;
+  const cancellations = [...data.leaves, ...data.overtime].filter((x) => x.cancelRequestedAt).length;
   const openOffers = data.overtime.filter((o) => o.status === 'OFFERED').length;
   const paid = data.payments.find((p) => p.month === DEMO_MONTH);
 
@@ -28,20 +29,23 @@ export default function HrDashboard() {
         <Cell><Stat label="Total take-home pay" value={<Money amount={sum((p) => p.netPay)} />} note={`${rows.length} employees`} /></Cell>
         <Cell delay={60}><Stat label="Total overtime cost" value={<Money amount={sum((p) => p.overtimePay)} />} note="Completed overtime only" /></Cell>
         <Cell delay={120}><Stat label="Total bonus" value={<Money amount={sum((p) => p.bonus)} />} /></Cell>
-        <Cell delay={180}><Stat label="Employees with deductions" value={deducted.length} tone={deducted.length ? 'danger' : 'success'} note={<Money amount={sum((p) => p.totalDeductions)} />} /></Cell>
+        <Cell delay={180}>
+          <Stat label="Employees with deductions" value={deducted.length} tone={deducted.length ? 'danger' : 'success'} note={<Money amount={sum((p) => p.totalDeductions)} />} />
+          <Link href="#deductions" className="btn btn-line mt-4">View deductions →</Link>
+        </Cell>
       </div>
 
       <div className="mt-5 grid gap-5 lg:grid-cols-3">
         <Cell>
           <p className="text-sm text-muted">Waiting for HR</p>
-          <p className="mt-1 text-[1.7rem] font-[650] text-navy">{pendingLeave + pendingOt}</p>
-          <p className="mt-1 text-sm text-muted">{pendingLeave} leave · {pendingOt} overtime requests</p>
+          <p className="mt-1 text-[1.7rem] font-[650] text-navy">{pendingLeave + pendingOt + cancellations}</p>
+          <p className="mt-1 text-sm text-muted">{pendingLeave} leave · {pendingOt} overtime · {cancellations} cancellation requests</p>
           <Link href="/hr/approvals" className="btn btn-line mt-4">Open approvals →</Link>
         </Cell>
         <Cell delay={60}>
           <p className="text-sm text-muted">Overtime offers waiting for staff</p>
           <p className="mt-1 text-[1.7rem] font-[650] text-navy">{openOffers}</p>
-          <Link href="/hr/offers" className="btn btn-line mt-4">Offer overtime →</Link>
+          <Link href="/hr/salary#overtime" className="btn btn-line mt-4">Offer overtime →</Link>
         </Cell>
         <Cell delay={120}>
           <p className="text-sm text-muted">Payroll status</p>
@@ -51,14 +55,16 @@ export default function HrDashboard() {
       </div>
 
       <Panel className="mt-8">
-        <h2>Who has deductions, and why</h2>
+        <div id="deductions" className="scroll-mt-40" />
+        <h2>Who has deductions, and why ({deducted.length})</h2>
+        {deducted.length === 0 ? <div className="mt-4"><Empty>No deductions this period.</Empty></div> : (
         <div className="mt-4 overflow-x-auto">
           <table className={TABLE}>
             <thead>
               <tr>{['Employee', 'Causes', 'Deducted', 'Take-home pay', 'WhatsApp'].map((h) => <th key={h} className={TH}>{h}</th>)}</tr>
             </thead>
             <tbody>
-              {rows.map(({ e, p }) => {
+              {deducted.map(({ e, p }) => {
                 const causes = Object.entries(p.events.reduce<Record<string, number>>((m, ev) => ({ ...m, [ev.kind]: (m[ev.kind] ?? 0) + 1 }), {}));
                 const messages = data.whatsapp.filter((m) => m.employeeId === e.id);
                 return (
@@ -82,6 +88,7 @@ export default function HrDashboard() {
             </tbody>
           </table>
         </div>
+        )}
       </Panel>
     </>
   );

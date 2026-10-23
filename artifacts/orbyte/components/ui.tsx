@@ -93,6 +93,26 @@ export function Modal({ open, title, onClose, children }: { open: boolean; title
   );
 }
 
+export interface Confirm {
+  title: string;
+  body: ReactNode;
+  confirmLabel: string;
+  onConfirm: () => void;
+}
+
+/** "Are you sure?" built on Modal. `confirm` null = closed. */
+export function ConfirmDialog({ confirm, onClose }: { confirm: Confirm | null; onClose: () => void }) {
+  return (
+    <Modal open={!!confirm} title={confirm?.title ?? ''} onClose={onClose}>
+      <div className="text-sm text-text-70">{confirm?.body}</div>
+      <div className="mt-6 flex justify-end gap-3">
+        <button type="button" className="btn btn-line" onClick={onClose}>Cancel</button>
+        <button type="button" className="btn btn-primary" onClick={() => { confirm?.onConfirm(); onClose(); }}>{confirm?.confirmLabel}</button>
+      </div>
+    </Modal>
+  );
+}
+
 /** Table styles shared by every list. */
 export const TABLE = 'w-full border-collapse text-left text-sm';
 export const TH = 'border-b border-line px-3 py-2.5 text-xs font-semibold text-muted';

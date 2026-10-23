@@ -19,6 +19,8 @@ export interface Employee {
   whatsapp: string; // dummy number
   baseSalary: number; // MYR per month
   bonus: number; // MYR per month
+  division: string; // groups positions for overtime rules, e.g. "Café floor"
+  annualLeaveDays: number; // yearly allowance of "Leave"-type days
 }
 
 /** One working day from the attendance system (synthetic). No clockIn = did not come in. */
@@ -28,6 +30,16 @@ export interface AttendanceRecord {
   clockIn?: string; // "08:12"
   clockOut?: string;
   lateMinutes: number;
+  izin?: boolean; // HR marked the day as permitted leave: not absent, not deducted
+  editedByHr?: boolean; // an HR override replaced the imported values for this day
+}
+
+/** HR's correction for one day, kept apart from the imported attendance (which is never overwritten). */
+export interface AttendanceOverride {
+  status: 'PRESENT' | 'ABSENT' | 'IZIN';
+  lateMinutes: number;
+  by: string;
+  at: string;
 }
 
 export interface PayrollConfig {
@@ -38,9 +50,17 @@ export interface PayrollConfig {
   leaveDeductionPct: number; // % of daily wage per deducted leave day
 }
 
-export type OvertimeStatus = 'OFFERED' | 'ACCEPTED' | 'DECLINED' | 'REQUESTED' | 'APPROVED' | 'REJECTED' | 'COMPLETED';
+export type OvertimeStatus = 'OFFERED' | 'ACCEPTED' | 'DECLINED' | 'REQUESTED' | 'APPROVED' | 'REJECTED' | 'COMPLETED' | 'WITHDRAWN' | 'CANCELLED';
 
-export interface Overtime {
+/** Decision and change fields shared by leave and overtime. */
+interface Tracked {
+  decidedAt?: string;
+  decidedBy?: string;
+  cancelRequestedAt?: string; // the employee asked to cancel an approved request; waiting for HR
+  editedAt?: string; // the employee edited it while pending
+}
+
+export interface Overtime extends Tracked {
   id: string;
   employeeId: string;
   date: ISODate;
@@ -63,18 +83,19 @@ export interface LeaveClassification {
   source: 'AI' | 'Fallback';
 }
 
-export interface LeaveRequest {
+export interface LeaveRequest extends Tracked {
   id: string;
   employeeId: string;
   type: LeaveType;
   startDate: ISODate;
   endDate: ISODate;
   reason: string;
-  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'WITHDRAWN' | 'CANCELLED';
   label: LeaveLabel;
   labelReason: string;
   confidence: number;
   labelSource: LabelSource;
+  aiPending?: boolean; // the AI is still reading the reason; the keyword label is shown until it answers
   createdAt: string;
 }
 
@@ -129,7 +150,7 @@ export interface WhatsAppMessage {
   text: string;
 }
 
-export type ActivityKind = 'LOGIN' | 'CONFIG' | 'REQUEST' | 'DECISION' | 'AI_LABEL' | 'RECALC' | 'WHATSAPP' | 'PAYMENT' | 'SYSTEM';
+export type ActivityKind = 'LOGIN' | 'CONFIG' | 'REQUEST' | 'DECISION' | 'REVERT' | 'ATTENDANCE' | 'AI_LABEL' | 'RECALC' | 'WHATSAPP' | 'PAYMENT' | 'SYSTEM';
 
 export interface ActivityEntry {
   id: string;
@@ -139,4 +160,12 @@ export interface ActivityEntry {
   action: string;
   target: string;
   detail: string;
+}
+
+/** Something an employee changed that HR should know about (withdrawn, edited, cancellation asked). */
+export interface HrNotification {
+  id: string;
+  at: string;
+  text: string;
+  read: boolean;
 }

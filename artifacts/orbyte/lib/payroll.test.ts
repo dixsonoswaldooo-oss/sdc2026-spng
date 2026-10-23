@@ -3,7 +3,7 @@ import { computePayroll, deductionMessage, workingDays } from './payroll';
 import { DEFAULT_CONFIG, EMPLOYEES, seedState } from './seed';
 import type { LeaveRequest, Overtime } from './types';
 
-const seed = seedState();
+const seed = seedState('2026-11-01'); // the whole of October has happened
 const OCT = '2026-10';
 const byId = (id: string) => EMPLOYEES.find((e) => e.id === id)!;
 const pay = (id: string, extra: { leaves?: LeaveRequest[]; overtime?: Overtime[]; config?: Partial<typeof DEFAULT_CONFIG> } = {}) =>

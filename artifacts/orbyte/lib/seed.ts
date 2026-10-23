@@ -1,18 +1,21 @@
 // Synthetic demo data (no real people). "Reset demo data" reloads exactly this.
 import { computePayroll, workingDays } from './payroll';
-import type { Account, AttendanceRecord, Employee, LeaveRequest, Month, Overtime, PaymentRun, PayrollConfig } from './types';
+import type { Account, AttendanceRecord, Employee, ISODate, LeaveRequest, Month, Overtime, PaymentRun, PayrollConfig } from './types';
 
 export const DEMO_MONTH: Month = '2026-10';
 export const COMPANY = 'Kopi Kawan Trading Sdn Bhd';
 export const HR_NAME = 'Nur Farah Hanim';
 
+export const DIVISIONS = ['Café floor', 'Roastery', 'Logistics', 'Office'];
+export const DEFAULT_LEAVE_DAYS = 14;
+
 export const EMPLOYEES: Employee[] = [
-  { id: 'E1', name: 'Ahmad Faiz', position: 'Barista Supervisor', whatsapp: '+60 12-345 1001', baseSalary: 3200, bonus: 250 },
-  { id: 'E2', name: 'Tan Mei Ling', position: 'Head Roaster', whatsapp: '+60 12-345 1002', baseSalary: 3600, bonus: 300 },
-  { id: 'E3', name: 'Ravi Kumar', position: 'Delivery Driver', whatsapp: '+60 12-345 1003', baseSalary: 2400, bonus: 150 },
-  { id: 'E4', name: 'Siti Aminah', position: 'Cashier', whatsapp: '+60 12-345 1004', baseSalary: 2200, bonus: 100 },
-  { id: 'E5', name: 'Daniel Lee', position: 'Sales Executive', whatsapp: '+60 12-345 1005', baseSalary: 3000, bonus: 400 },
-  { id: 'E6', name: 'Nurul Izzah', position: 'Admin Assistant', whatsapp: '+60 12-345 1006', baseSalary: 2600, bonus: 150 },
+  { id: 'E1', name: 'Ahmad Faiz', position: 'Barista Supervisor', whatsapp: '+60 12-345 1001', baseSalary: 3200, bonus: 250, division: 'Café floor', annualLeaveDays: DEFAULT_LEAVE_DAYS },
+  { id: 'E2', name: 'Tan Mei Ling', position: 'Head Roaster', whatsapp: '+60 12-345 1002', baseSalary: 3600, bonus: 300, division: 'Roastery', annualLeaveDays: DEFAULT_LEAVE_DAYS },
+  { id: 'E3', name: 'Ravi Kumar', position: 'Delivery Driver', whatsapp: '+60 12-345 1003', baseSalary: 2400, bonus: 150, division: 'Logistics', annualLeaveDays: DEFAULT_LEAVE_DAYS },
+  { id: 'E4', name: 'Siti Aminah', position: 'Cashier', whatsapp: '+60 12-345 1004', baseSalary: 2200, bonus: 100, division: 'Café floor', annualLeaveDays: DEFAULT_LEAVE_DAYS },
+  { id: 'E5', name: 'Daniel Lee', position: 'Sales Executive', whatsapp: '+60 12-345 1005', baseSalary: 3000, bonus: 400, division: 'Office', annualLeaveDays: DEFAULT_LEAVE_DAYS },
+  { id: 'E6', name: 'Nurul Izzah', position: 'Admin Assistant', whatsapp: '+60 12-345 1006', baseSalary: 2600, bonus: 150, division: 'Office', annualLeaveDays: DEFAULT_LEAVE_DAYS },
 ];
 
 export const ACCOUNTS: Account[] = [
@@ -46,9 +49,9 @@ const clock = (minutesAfter8: number) => {
   return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
 };
 
-function attendanceFor(month: Month): AttendanceRecord[] {
+function attendanceFor(month: Month, before: ISODate): AttendanceRecord[] {
   return EMPLOYEES.flatMap((e, ei) =>
-    workingDays(month).map((day, di): AttendanceRecord => {
+    workingDays(month).filter((day) => day < before).map((day, di): AttendanceRecord => {
       const special = EXCEPTIONS[e.id][day];
       if (special === null) return { employeeId: e.id, date: day, lateMinutes: 0 };
       const minutes = special ?? -(5 + ((ei * 7 + di * 3) % 12)); // on time: 07:44–07:55
@@ -57,8 +60,13 @@ function attendanceFor(month: Month): AttendanceRecord[] {
   );
 }
 
-export function seedState() {
-  const attendance = [...attendanceFor('2026-09'), ...attendanceFor(DEMO_MONTH)];
+/** The "imported" attendance: every working day of September and October 2026 that has already happened (before `today`). */
+export function importAttendance(today: ISODate): AttendanceRecord[] {
+  return [...attendanceFor('2026-09', today), ...attendanceFor(DEMO_MONTH, today)];
+}
+
+export function seedState(today: ISODate) {
+  const attendance = importAttendance(today);
   const leaves: LeaveRequest[] = [
     {
       id: 'LV-1', employeeId: 'E5', type: 'LEAVE', startDate: '2026-10-27', endDate: '2026-10-27',
@@ -94,5 +102,5 @@ export function seedState() {
     total: Math.round(septemberLines.reduce((t, l) => t + l.netPay, 0) * 100) / 100,
   };
 
-  return { employees: structuredClone(EMPLOYEES), attendance, config: { ...DEFAULT_CONFIG }, leaves, overtime, payments: [september] };
+  return { employees: structuredClone(EMPLOYEES), attendance, config: { ...DEFAULT_CONFIG }, leaves, overtime, payments: [september], today };
 }

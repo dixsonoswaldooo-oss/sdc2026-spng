@@ -1,14 +1,21 @@
 // Every change to the demo data, as pure functions: (data, input) → new data.
 // After each change `reconcile` recalculates pay, logs net-pay changes and sends (simulated) WhatsApp messages.
+// Nothing in a paid month can change (`assertOpen`), and every reversal or edit is written to the activity log.
 import { money, monthName, toSen } from './format';
-import { computePayroll, datesBetween, deductionMessage } from './payroll';
-import { DEMO_MONTH, seedState } from './seed';
+import { computePayroll, datesBetween, deductionMessage, workingDays } from './payroll';
+import { DEFAULT_LEAVE_DAYS, DEMO_MONTH, DIVISIONS, EMPLOYEES, importAttendance, seedState } from './seed';
 import type {
-  ActivityEntry, ActivityKind, Employee, LeaveClassification, LeaveLabel, LeaveRequest, LeaveType, Month, Overtime,
-  PaymentLine, PayrollBreakdown, PayrollConfig, WhatsAppMessage,
+  ActivityEntry, ActivityKind, AttendanceOverride, AttendanceRecord, Employee, HrNotification, ISODate, LeaveClassification,
+  LeaveLabel, LeaveRequest, LeaveType, Month, Overtime, PaymentLine, PayrollBreakdown, PayrollConfig, WhatsAppMessage,
 } from './types';
 
+export const DATA_VERSION = 2;
+
 export interface Data extends ReturnType<typeof seedState> {
+  version: number;
+  attendanceOverrides: Record<string, AttendanceOverride>; // "E3|2026-10-14" → HR's correction (imported data stays as is)
+  divisionOvertime: Record<string, number>; // division → overtime rate per hour, overriding the global rule
+  notifications: HrNotification[];
   whatsapp: WhatsAppMessage[];
   activity: ActivityEntry[];
   notified: Record<string, number>; // "E3|LATE:2026-10-14" → amount last sent by WhatsApp
@@ -22,12 +29,22 @@ export interface Ctx {
   now: string;
 }
 
+type LeaveInput = { type: LeaveType; startDate: string; endDate: string; reason: string };
+type OvertimeInput = { date: string; hours: number; note: string };
+
 export const LABEL_WORDS: Record<LeaveLabel, string> = { DITOLERANSI: 'Tolerated', DIPOTONG: 'Deducted' };
+
+/** The calendar date in Malaysia (UTC+8) for an ISO timestamp: the demo's "today". */
+export const todayOf = (now: string): ISODate => new Date(Date.parse(now) + 8 * 3_600_000).toISOString().slice(0, 10);
 
 const nextId = (d: Data, prefix: string) => `${prefix}-${++d.seq}`;
 
 function log(d: Data, ctx: Ctx, kind: ActivityKind, action: string, target: string, detail = '', actor = ctx.actor): void {
   d.activity.unshift({ id: nextId(d, 'LOG'), at: ctx.now, actor, kind, action, target, detail });
+}
+
+function notify(d: Data, ctx: Ctx, text: string): void {
+  d.notifications.unshift({ id: nextId(d, 'N'), at: ctx.now, text, read: false });
 }
 
 function sendWhatsApp(d: Data, ctx: Ctx, employee: Employee, kind: WhatsAppMessage['kind'], text: string): void {
@@ -38,13 +55,35 @@ function sendWhatsApp(d: Data, ctx: Ctx, employee: Employee, kind: WhatsAppMessa
 export const isPaid = (d: Data, month: Month) => d.payments.some((p) => p.month === month);
 const employee = (d: Data, id: string) => d.employees.find((e) => e.id === id)!;
 
+/** Overtime rate for an employee: their division's override, else the global rule. */
+export const overtimeRate = (d: Data, e: Employee) => d.divisionOvertime[e.division] ?? d.config.overtimeRatePerHour;
+const configFor = (d: Data, e: Employee): PayrollConfig => ({ ...d.config, overtimeRatePerHour: overtimeRate(d, e) });
+
+const clockAt = (minutesLate: number) => {
+  const total = 8 * 60 + minutesLate;
+  return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+};
+
+/** An employee's attendance: the imported records with HR's corrections applied on top. */
+export function attendanceOf(d: Data, employeeId: string): AttendanceRecord[] {
+  return d.attendance.filter((a) => a.employeeId === employeeId).map((a) => {
+    const o = d.attendanceOverrides[`${employeeId}|${a.date}`];
+    if (!o) return a;
+    const present = o.status === 'PRESENT';
+    return {
+      ...a, clockIn: present ? (a.clockIn && a.lateMinutes === o.lateMinutes ? a.clockIn : clockAt(o.lateMinutes)) : undefined,
+      lateMinutes: present ? o.lateMinutes : 0, izin: o.status === 'IZIN', editedByHr: true,
+    };
+  });
+}
+
 /** Pay for one employee: the frozen snapshot if the month is paid, otherwise calculated live. */
 export function payrollFor(d: Data, employeeId: string, month: Month): PayrollBreakdown | PaymentLine {
   const paid = d.payments.find((p) => p.month === month)?.lines.find((l) => l.employeeId === employeeId);
   if (paid) return paid;
+  const e = employee(d, employeeId);
   return computePayroll({
-    employee: employee(d, employeeId), month, config: d.config,
-    attendance: d.attendance.filter((a) => a.employeeId === employeeId),
+    employee: e, month, config: configFor(d, e), attendance: attendanceOf(d, employeeId), today: d.today,
     leaves: d.leaves.filter((l) => l.employeeId === employeeId),
     overtime: d.overtime.filter((o) => o.employeeId === employeeId),
   });
@@ -80,17 +119,55 @@ export function reconcile(d: Data, ctx: Ctx): Data {
   return d;
 }
 
+/** A new day brings in the attendance imported since (raw data only grows; HR corrections are kept apart). */
+function catchUpToToday(d: Data, ctx: Ctx): void {
+  const today = todayOf(ctx.now);
+  if (d.today === today) return;
+  d.today = today;
+  d.attendance = importAttendance(today);
+}
+
 /** Applies a change to a copy of the data, then reconciles. */
 function change(data: Data, ctx: Ctx, edit: (d: Data) => void): Data {
   const d = structuredClone(data);
+  catchUpToToday(d, ctx);
   edit(d);
   return reconcile(d, ctx);
 }
 
+/** Brings the data to today: new attendance, recalculated pay, WhatsApp for deductions that appeared since. */
+export const refresh = (data: Data, ctx: Ctx) => change(data, ctx, () => {});
+
 export function freshData(ctx: Ctx): Data {
-  const d: Data = { ...seedState(), whatsapp: [], activity: [], notified: {}, lastNet: {}, seq: 0 };
-  log(d, ctx, 'SYSTEM', 'Loaded demo data', 'October 2026', '6 employees, attendance for September and October 2026, September already paid', 'System');
+  const d: Data = {
+    ...seedState(todayOf(ctx.now)), version: DATA_VERSION, attendanceOverrides: {}, divisionOvertime: {}, notifications: [],
+    whatsapp: [], activity: [], notified: {}, lastNet: {}, seq: 0,
+  };
+  log(d, ctx, 'SYSTEM', 'Loaded demo data', 'October 2026', '6 employees, attendance for September and October 2026 up to yesterday, September already paid', 'System');
   return reconcile(d, ctx);
+}
+
+/** Data saved by an older version (v1) gets the new fields; requests, payments, messages and the log are kept. */
+export function migrate(saved: Data, ctx: Ctx): Data {
+  const d = structuredClone(saved);
+  if ((d.version ?? 1) < DATA_VERSION) {
+    d.employees = d.employees.map((e) => {
+      const seed = EMPLOYEES.find((s) => s.id === e.id);
+      return { ...e, division: e.division ?? seed?.division ?? DIVISIONS[0], annualLeaveDays: e.annualLeaveDays ?? DEFAULT_LEAVE_DAYS };
+    });
+    d.attendanceOverrides ??= {};
+    d.divisionOvertime ??= {};
+    d.notifications ??= [];
+    d.version = DATA_VERSION;
+    log(d, ctx, 'SYSTEM', 'Updated saved demo data', 'All data', 'Added divisions, leave allowances, attendance corrections and HR notifications. Nothing was removed.', 'System');
+  }
+  return refresh(d, ctx);
+}
+
+/** Why a period can't change ("This period has been paid"), or null. Shown next to disabled buttons. */
+export function paidReason(d: Data, dates: string[]): string | null {
+  const paid = dates.find((day) => isPaid(d, day.slice(0, 7)));
+  return paid ? `This period has been paid (${monthName(paid.slice(0, 7))})` : null;
 }
 
 function assertOpen(d: Data, dates: string[]): void {
@@ -129,55 +206,222 @@ export const updateConfig = (data: Data, ctx: Ctx, next: PayrollConfig) =>
     d.config = { ...next };
   });
 
+/** A division's own overtime rate; null goes back to the global default. */
+export const setDivisionOvertime = (data: Data, ctx: Ctx, division: string, rate: number | null) =>
+  change(data, ctx, (d) => {
+    if (rate !== null && !(Number.isFinite(rate) && rate >= 0)) throw new Error('The overtime rate must be 0 or more.');
+    const before = d.divisionOvertime[division];
+    if (before === (rate ?? undefined)) return;
+    const word = (v: number | undefined) => (v === undefined ? `default (${money(d.config.overtimeRatePerHour)}/hour)` : `${money(v)}/hour`);
+    if (rate === null) delete d.divisionOvertime[division];
+    else d.divisionOvertime[division] = toSen(rate);
+    log(d, ctx, 'CONFIG', 'Changed division overtime rate', division, `${word(before)} → ${word(rate ?? undefined)}`);
+  });
+
+/** "Leave"-type working days approved in a year (other types don't use the allowance). */
+export function leaveUsed(d: Data, employeeId: string, year = DEMO_MONTH.slice(0, 4)): number {
+  return d.leaves
+    .filter((l) => l.employeeId === employeeId && l.type === 'LEAVE' && l.status === 'APPROVED')
+    .flatMap((l) => datesBetween(l.startDate, l.endDate))
+    .filter((day) => day.startsWith(year) && workingDays(day.slice(0, 7)).includes(day)).length;
+}
+
+export const updateLeaveAllowance = (data: Data, ctx: Ctx, id: string, days: number) =>
+  change(data, ctx, (d) => {
+    if (!Number.isInteger(days) || days < 0) throw new Error('Enter a whole number of days, 0 or more.');
+    const e = employee(d, id);
+    if (e.annualLeaveDays === days) return;
+    log(d, ctx, 'CONFIG', 'Changed annual leave allowance', e.name, `${e.annualLeaveDays} → ${days} days (${leaveUsed(d, id)} used)`);
+    e.annualLeaveDays = days;
+  });
+
+const describeDay = (r: AttendanceRecord | undefined) =>
+  !r ? 'no record' : r.izin ? 'izin (permitted)' : !r.clockIn ? 'absent' : r.lateMinutes ? `present, ${r.lateMinutes} min late` : 'present, on time';
+
+/** HR corrects one day (null = back to the imported value). Only days that have happened, never in a paid month. */
+export const setAttendance = (data: Data, ctx: Ctx, employeeId: string, day: ISODate, value: { status: AttendanceOverride['status']; lateMinutes: number } | null) =>
+  change(data, ctx, (d) => {
+    if (!d.attendance.some((a) => a.employeeId === employeeId && a.date === day)) throw new Error('Only working days that have already happened can be edited.');
+    assertOpen(d, [day]);
+    const key = `${employeeId}|${day}`;
+    const before = describeDay(attendanceOf(d, employeeId).find((a) => a.date === day));
+    if (value === null) {
+      if (!d.attendanceOverrides[key]) return;
+      delete d.attendanceOverrides[key];
+    } else {
+      const late = value.status === 'PRESENT' ? value.lateMinutes : 0;
+      if (!Number.isInteger(late) || late < 0 || late > 600) throw new Error('Minutes late must be a whole number from 0 to 600.');
+      d.attendanceOverrides[key] = { status: value.status, lateMinutes: late, by: ctx.actor, at: ctx.now };
+    }
+    const after = describeDay(attendanceOf(d, employeeId).find((a) => a.date === day));
+    log(d, ctx, 'ATTENDANCE', value === null ? 'Reset attendance to the imported value' : 'Edited attendance', employee(d, employeeId).name, `${day}: ${before} → ${after}`);
+  });
+
+/** Monthly counts for the attendance screen. Izin = days HR marked izin + approved "Permission" leave days. */
+export function attendanceSummary(d: Data, employeeId: string, month: Month) {
+  const p = payrollFor(d, employeeId, month);
+  const records = attendanceOf(d, employeeId).filter((a) => a.date.startsWith(month));
+  const permission = d.leaves
+    .filter((l) => l.employeeId === employeeId && l.type === 'PERMISSION' && l.status === 'APPROVED')
+    .flatMap((l) => datesBetween(l.startDate, l.endDate))
+    .filter((day) => workingDays(month).includes(day)).length;
+  return {
+    absent: p.events.filter((e) => e.kind === 'ABSENT').length,
+    izin: records.filter((r) => r.izin).length + permission,
+    late: p.events.filter((e) => e.kind === 'LATE').length,
+    edited: records.filter((r) => r.editedByHr).length,
+  };
+}
+
 // ---------- Leave ----------
 
-export function submitLeave(data: Data, ctx: Ctx, employeeId: string, input: { type: LeaveType; startDate: string; endDate: string; reason: string }, ai: LeaveClassification): Data {
+const span = (l: { startDate: string; endDate: string }) => `${l.startDate}${l.endDate !== l.startDate ? ` to ${l.endDate}` : ''}`;
+const leaveWords = (l: LeaveInput) => `${l.type.replace('_', ' ').toLowerCase()} ${span(l)}: "${l.reason}"`;
+const STATUS_WORDS: Record<string, string> = { APPROVED: 'Approved', REJECTED: 'Rejected' };
+
+function leaveById(d: Data, id: string): LeaveRequest {
+  const leave = d.leaves.find((l) => l.id === id);
+  if (!leave) throw new Error('This request no longer exists.');
+  return leave;
+}
+
+/** Why an employee can't cancel an approved leave, or null. */
+export function leaveCancelBlock(d: Data, l: LeaveRequest): string | null {
+  return paidReason(d, datesBetween(l.startDate, l.endDate)) ?? (l.startDate <= d.today ? 'This leave has already been taken' : null);
+}
+
+/** Saved at once as pending with the keyword label; `aiPending` = the AI's label will replace it when it answers. */
+export function submitLeave(data: Data, ctx: Ctx, employeeId: string, input: LeaveInput, ai: LeaveClassification, aiPending = false): Data {
   if (input.endDate < input.startDate) throw new Error('The end date is before the start date.');
   return change(data, ctx, (d) => {
     assertOpen(d, datesBetween(input.startDate, input.endDate));
     const leave: LeaveRequest = {
       id: nextId(d, 'LV'), employeeId, ...input, status: 'PENDING', label: ai.label, labelReason: ai.alasan,
-      confidence: ai.keyakinan, labelSource: ai.source, createdAt: ctx.now,
+      confidence: ai.keyakinan, labelSource: ai.source, aiPending, createdAt: ctx.now,
     };
     d.leaves.unshift(leave);
     const who = employee(d, employeeId).name;
-    log(d, ctx, 'REQUEST', 'Submitted leave request', who, `${input.type.replace('_', ' ').toLowerCase()} ${input.startDate}${input.endDate !== input.startDate ? ` to ${input.endDate}` : ''}: "${input.reason}"`);
+    log(d, ctx, 'REQUEST', 'Submitted leave request', who, leaveWords(input));
     log(d, ctx, 'AI_LABEL', `Labelled leave ${LABEL_WORDS[ai.label]}`, who, `${ai.alasan} (confidence ${Math.round(ai.keyakinan * 100)}%)`, ai.source === 'AI' ? 'AI' : 'System (fallback)');
   });
 }
 
+/** The employee changes a request that HR has not decided yet. HR is notified; the AI reads the new reason. */
+export function editLeave(data: Data, ctx: Ctx, id: string, input: LeaveInput, ai: LeaveClassification): Data {
+  if (input.endDate < input.startDate) throw new Error('The end date is before the start date.');
+  return change(data, ctx, (d) => {
+    const leave = leaveById(d, id);
+    if (leave.status !== 'PENDING') throw new Error('Only a request that is still waiting for HR can be edited.');
+    assertOpen(d, [...datesBetween(leave.startDate, leave.endDate), ...datesBetween(input.startDate, input.endDate)]);
+    const before = leaveWords(leave);
+    Object.assign(leave, {
+      ...input, label: ai.label, labelReason: ai.alasan, confidence: ai.keyakinan, labelSource: ai.source, aiPending: true, editedAt: ctx.now,
+    });
+    const who = employee(d, leave.employeeId).name;
+    log(d, ctx, 'REQUEST', 'Edited leave request', who, `${before} → ${leaveWords(leave)}`);
+    notify(d, ctx, `${who} edited a pending leave request (${span(leave)}). Review the new version.`);
+  });
+}
+
+export const withdrawLeave = (data: Data, ctx: Ctx, id: string) =>
+  change(data, ctx, (d) => {
+    const leave = leaveById(d, id);
+    if (leave.status !== 'PENDING') throw new Error('Only a request that is still waiting for HR can be withdrawn.');
+    assertOpen(d, datesBetween(leave.startDate, leave.endDate));
+    leave.status = 'WITHDRAWN';
+    const who = employee(d, leave.employeeId).name;
+    log(d, ctx, 'REQUEST', 'Withdrew leave request', who, leaveWords(leave));
+    notify(d, ctx, `${who} withdrew a pending leave request (${span(leave)}). Nothing to review.`);
+  });
+
+export const requestLeaveCancellation = (data: Data, ctx: Ctx, id: string) =>
+  change(data, ctx, (d) => {
+    const leave = leaveById(d, id);
+    if (leave.status !== 'APPROVED' || leave.cancelRequestedAt) throw new Error('Only an approved leave can be cancelled, once.');
+    const blocked = leaveCancelBlock(d, leave);
+    if (blocked) throw new Error(`${blocked}.`);
+    leave.cancelRequestedAt = ctx.now;
+    log(d, ctx, 'REQUEST', 'Asked to cancel approved leave', employee(d, leave.employeeId).name, leaveWords(leave));
+  });
+
+/** HR approves (→ Cancelled, allowance and pay restored) or rejects (the approval stays) a cancellation request. */
+export const decideLeaveCancellation = (data: Data, ctx: Ctx, id: string, approve: boolean) =>
+  change(data, ctx, (d) => {
+    const leave = leaveById(d, id);
+    if (leave.status !== 'APPROVED' || !leave.cancelRequestedAt) throw new Error('There is no cancellation request for this leave.');
+    assertOpen(d, datesBetween(leave.startDate, leave.endDate));
+    delete leave.cancelRequestedAt;
+    if (approve) Object.assign(leave, { status: 'CANCELLED', decidedAt: ctx.now, decidedBy: ctx.actor });
+    log(d, ctx, 'DECISION', approve ? 'Approved leave cancellation' : 'Rejected leave cancellation', employee(d, leave.employeeId).name,
+      approve ? `${span(leave)} cancelled` : `${span(leave)} stays approved`);
+  });
+
 export const setLeaveLabel = (data: Data, ctx: Ctx, id: string, label: LeaveLabel) =>
   change(data, ctx, (d) => {
-    const leave = d.leaves.find((l) => l.id === id)!;
+    const leave = leaveById(d, id);
     if (leave.label === label) return;
     assertOpen(d, datesBetween(leave.startDate, leave.endDate));
     log(d, ctx, 'AI_LABEL', 'Changed leave label', employee(d, leave.employeeId).name, `${LABEL_WORDS[leave.label]} (${leave.labelSource}) → ${LABEL_WORDS[label]}`);
-    Object.assign(leave, { label, labelSource: 'HR', labelReason: `Changed by HR to ${LABEL_WORDS[label]}.` });
+    Object.assign(leave, { label, labelSource: 'HR', labelReason: `Changed by HR to ${LABEL_WORDS[label]}.`, aiPending: false });
   });
 
-/** A late AI answer (cold RunPod worker) replaces the keyword label, unless HR already changed it or decided. */
-export const applyAiLabel = (data: Data, ctx: Ctx, id: string, ai: LeaveClassification) =>
+/**
+ * The AI's answer arrives (it runs in the background). Ignored if the reason was edited since, or if the request is no
+ * longer waiting for its label; a failed AI (keyword answer) only ends the waiting.
+ */
+export const applyAiLabel = (data: Data, ctx: Ctx, id: string, ai: LeaveClassification, reason: string) =>
   change(data, ctx, (d) => {
     const leave = d.leaves.find((l) => l.id === id);
-    if (!leave || leave.status !== 'PENDING' || leave.labelSource === 'HR' || ai.source !== 'AI') return;
+    if (!leave || !leave.aiPending || leave.reason !== reason) return;
+    leave.aiPending = false;
+    if (leave.status !== 'PENDING' || leave.labelSource === 'HR' || ai.source !== 'AI') return;
     Object.assign(leave, { label: ai.label, labelReason: ai.alasan, confidence: ai.keyakinan, labelSource: 'AI' });
     log(d, ctx, 'AI_LABEL', `Labelled leave ${LABEL_WORDS[ai.label]}`, employee(d, leave.employeeId).name, `${ai.alasan} (confidence ${Math.round(ai.keyakinan * 100)}%)`, 'AI');
   });
 
 export const decideLeave = (data: Data, ctx: Ctx, id: string, approve: boolean) =>
   change(data, ctx, (d) => {
-    const leave = d.leaves.find((l) => l.id === id)!;
+    const leave = leaveById(d, id);
     if (leave.status !== 'PENDING') throw new Error('This request has already been decided.');
     assertOpen(d, datesBetween(leave.startDate, leave.endDate));
-    leave.status = approve ? 'APPROVED' : 'REJECTED';
+    Object.assign(leave, { status: approve ? 'APPROVED' : 'REJECTED', decidedAt: ctx.now, decidedBy: ctx.actor });
     log(d, ctx, 'DECISION', approve ? 'Approved leave' : 'Rejected leave', employee(d, leave.employeeId).name,
-      approve ? `${leave.startDate} – ${leave.endDate}, label ${LABEL_WORDS[leave.label]}` : `${leave.startDate} – ${leave.endDate}`);
+      approve ? `${span(leave)}, label ${LABEL_WORDS[leave.label]}` : span(leave));
+  });
+
+/** HR undoes an approval or rejection: back to pending, decision cleared, pay recalculated. */
+export const revertLeave = (data: Data, ctx: Ctx, id: string) =>
+  change(data, ctx, (d) => {
+    const leave = leaveById(d, id);
+    if (leave.status !== 'APPROVED' && leave.status !== 'REJECTED') throw new Error('Only an approved or rejected request can go back to pending.');
+    assertOpen(d, datesBetween(leave.startDate, leave.endDate));
+    const was = `was ${STATUS_WORDS[leave.status]}${leave.decidedBy ? ` by ${leave.decidedBy}` : ''}${leave.decidedAt ? ` at ${leave.decidedAt}` : ''}`;
+    leave.status = 'PENDING';
+    delete leave.decidedAt;
+    delete leave.decidedBy;
+    delete leave.cancelRequestedAt;
+    log(d, ctx, 'REVERT', 'Reverted leave decision to pending', employee(d, leave.employeeId).name, `${span(leave)} · ${was}`);
   });
 
 // ---------- Overtime ----------
 
-export function requestOvertime(data: Data, ctx: Ctx, employeeId: string, input: { date: string; hours: number; note: string }): Data {
-  if (!(input.hours > 0 && input.hours <= 12)) throw new Error('Overtime must be between 0.5 and 12 hours.');
+function overtimeById(d: Data, id: string): Overtime {
+  const ot = d.overtime.find((o) => o.id === id);
+  if (!ot) throw new Error('This overtime no longer exists.');
+  return ot;
+}
+
+const checkHours = (hours: number) => {
+  if (!(hours > 0 && hours <= 12)) throw new Error('Overtime must be between 0.5 and 12 hours.');
+};
+
+/** Why an employee can't cancel approved/accepted overtime, or null. */
+export function overtimeCancelBlock(d: Data, o: Overtime): string | null {
+  return paidReason(d, [o.date]) ?? (o.status === 'COMPLETED' || o.date <= d.today ? 'This overtime has already been worked' : null);
+}
+
+export function requestOvertime(data: Data, ctx: Ctx, employeeId: string, input: OvertimeInput): Data {
+  checkHours(input.hours);
   return change(data, ctx, (d) => {
     assertOpen(d, [input.date]);
     const ot: Overtime = { id: nextId(d, 'OT'), employeeId, ...input, origin: 'EMPLOYEE', status: 'REQUESTED', createdAt: ctx.now };
@@ -186,9 +430,34 @@ export function requestOvertime(data: Data, ctx: Ctx, employeeId: string, input:
   });
 }
 
-export function offerOvertime(data: Data, ctx: Ctx, employeeIds: string[], input: { date: string; hours: number; note: string }): Data {
+export function editOvertime(data: Data, ctx: Ctx, id: string, input: OvertimeInput): Data {
+  checkHours(input.hours);
+  return change(data, ctx, (d) => {
+    const ot = overtimeById(d, id);
+    if (ot.status !== 'REQUESTED') throw new Error('Only a request that is still waiting for HR can be edited.');
+    assertOpen(d, [ot.date, input.date]);
+    const before = `${ot.hours} h on ${ot.date}: "${ot.note}"`;
+    Object.assign(ot, { ...input, editedAt: ctx.now });
+    const who = employee(d, ot.employeeId).name;
+    log(d, ctx, 'REQUEST', 'Edited overtime request', who, `${before} → ${ot.hours} h on ${ot.date}: "${ot.note}"`);
+    notify(d, ctx, `${who} edited a pending overtime request (${ot.date}). Review the new version.`);
+  });
+}
+
+export const withdrawOvertime = (data: Data, ctx: Ctx, id: string) =>
+  change(data, ctx, (d) => {
+    const ot = overtimeById(d, id);
+    if (ot.status !== 'REQUESTED') throw new Error('Only a request that is still waiting for HR can be withdrawn.');
+    assertOpen(d, [ot.date]);
+    ot.status = 'WITHDRAWN';
+    const who = employee(d, ot.employeeId).name;
+    log(d, ctx, 'REQUEST', 'Withdrew overtime request', who, `${ot.hours} h on ${ot.date}`);
+    notify(d, ctx, `${who} withdrew a pending overtime request (${ot.date}). Nothing to review.`);
+  });
+
+export function offerOvertime(data: Data, ctx: Ctx, employeeIds: string[], input: OvertimeInput): Data {
   if (!employeeIds.length) throw new Error('Choose at least one employee.');
-  if (!(input.hours > 0 && input.hours <= 12)) throw new Error('Overtime must be between 0.5 and 12 hours.');
+  checkHours(input.hours);
   return change(data, ctx, (d) => {
     assertOpen(d, [input.date]);
     for (const id of employeeIds) {
@@ -196,7 +465,7 @@ export function offerOvertime(data: Data, ctx: Ctx, employeeIds: string[], input
       d.overtime.unshift({ id: nextId(d, 'OT'), employeeId: id, ...input, origin: 'HR', status: 'OFFERED', createdAt: ctx.now });
       log(d, ctx, 'REQUEST', 'Offered overtime', e.name, `${input.hours} h on ${input.date}: "${input.note}"`);
       sendWhatsApp(d, ctx, e, 'OVERTIME_OFFER',
-        `Hi ${e.name.split(' ')[0]}, HR is offering you ${input.hours} hours of overtime on ${input.date} (${money(input.hours * d.config.overtimeRatePerHour)}). ${input.note} Please accept or decline in e-Salary Guard.`);
+        `Hi ${e.name.split(' ')[0]}, HR is offering you ${input.hours} hours of overtime on ${input.date} (${money(input.hours * overtimeRate(d, e))}). ${input.note} Please accept or decline in e-Salary Guard.`);
     }
   });
 }
@@ -211,11 +480,48 @@ const OT_WORDS: Record<string, string> = {
 /** HR approves/rejects a request; the employee accepts/declines an offer, then marks it done. */
 export const moveOvertime = (data: Data, ctx: Ctx, id: string, to: 'APPROVED' | 'REJECTED' | 'ACCEPTED' | 'DECLINED' | 'COMPLETED') =>
   change(data, ctx, (d) => {
-    const ot = d.overtime.find((o) => o.id === id)!;
-    if (!OT_NEXT[to].includes(ot.status)) throw new Error('This overtime can no longer be changed that way.');
+    const ot = overtimeById(d, id);
+    if (!OT_NEXT[to].includes(ot.status) || ot.cancelRequestedAt) throw new Error('This overtime can no longer be changed that way.');
     assertOpen(d, [ot.date]);
     ot.status = to;
+    if (to === 'APPROVED' || to === 'REJECTED') Object.assign(ot, { decidedAt: ctx.now, decidedBy: ctx.actor });
     log(d, ctx, 'DECISION', OT_WORDS[to], employee(d, ot.employeeId).name, `${ot.hours} h on ${ot.date}`);
+  });
+
+/** HR undoes an approval or rejection of an employee's request. Worked (done) overtime can't go back. */
+export const revertOvertime = (data: Data, ctx: Ctx, id: string) =>
+  change(data, ctx, (d) => {
+    const ot = overtimeById(d, id);
+    if (ot.status === 'COMPLETED') throw new Error('This overtime has been worked and marked done, so it can no longer go back to pending.');
+    if (ot.origin !== 'EMPLOYEE' || (ot.status !== 'APPROVED' && ot.status !== 'REJECTED')) throw new Error('Only an approved or rejected request can go back to pending.');
+    assertOpen(d, [ot.date]);
+    const was = `was ${STATUS_WORDS[ot.status]}${ot.decidedBy ? ` by ${ot.decidedBy}` : ''}${ot.decidedAt ? ` at ${ot.decidedAt}` : ''}`;
+    ot.status = 'REQUESTED';
+    delete ot.decidedAt;
+    delete ot.decidedBy;
+    delete ot.cancelRequestedAt;
+    log(d, ctx, 'REVERT', 'Reverted overtime decision to pending', employee(d, ot.employeeId).name, `${ot.hours} h on ${ot.date} · ${was}`);
+  });
+
+export const requestOvertimeCancellation = (data: Data, ctx: Ctx, id: string) =>
+  change(data, ctx, (d) => {
+    const ot = overtimeById(d, id);
+    if ((ot.status !== 'APPROVED' && ot.status !== 'ACCEPTED') || ot.cancelRequestedAt) throw new Error('Only approved or accepted overtime can be cancelled, once.');
+    const blocked = overtimeCancelBlock(d, ot);
+    if (blocked) throw new Error(`${blocked}.`);
+    ot.cancelRequestedAt = ctx.now;
+    log(d, ctx, 'REQUEST', 'Asked to cancel overtime', employee(d, ot.employeeId).name, `${ot.hours} h on ${ot.date}`);
+  });
+
+export const decideOvertimeCancellation = (data: Data, ctx: Ctx, id: string, approve: boolean) =>
+  change(data, ctx, (d) => {
+    const ot = overtimeById(d, id);
+    if (!ot.cancelRequestedAt) throw new Error('There is no cancellation request for this overtime.');
+    assertOpen(d, [ot.date]);
+    delete ot.cancelRequestedAt;
+    if (approve) Object.assign(ot, { status: 'CANCELLED', decidedAt: ctx.now, decidedBy: ctx.actor });
+    log(d, ctx, 'DECISION', approve ? 'Approved overtime cancellation' : 'Rejected overtime cancellation', employee(d, ot.employeeId).name,
+      `${ot.hours} h on ${ot.date}${approve ? ' cancelled' : ' stays'}`);
   });
 
 // ---------- Payroll ----------
@@ -237,5 +543,11 @@ export function payMonth(data: Data, ctx: Ctx, month: Month): Data {
 export function logLogin(data: Data, ctx: Ctx, who: string): Data {
   const d = structuredClone(data);
   log(d, ctx, 'LOGIN', 'Signed in', who, '', who);
+  return d;
+}
+
+export function markNotificationsRead(data: Data): Data {
+  const d = structuredClone(data);
+  for (const n of d.notifications) n.read = true;
   return d;
 }

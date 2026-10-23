@@ -58,6 +58,14 @@ For the AI locally, export the three RUNPOD_* values in the shell (never commit 
   `lib/leaveClassifier.ts` AI prompt, answer check, keyword fallback and the anti-gaming filter; `lib/store.tsx` state + storage.
 - `app/ai/classify-leave/route.ts` the only code that talks to RunPod.
 - Money only from `lib/payroll.ts`; only attendance deductions (no tax, EPF, SOCSO, EIS). Format money as `RM 3,500.00`.
+- "Today" is the real date in Malaysia (`engine.todayOf`). Imported attendance exists only for days before today
+  (`seed.importAttendance`); days not yet happened are never absent. HR corrections live in `attendanceOverrides`, never in the raw data.
+- Every reversal or edit (revert, withdraw, edit, cancellation, attendance, allowance, division rate) goes through `lib/engine.ts`:
+  it must call `assertOpen` (paid month = locked) and `log`. UI shows why an action is disabled with `paidReason` /
+  `leaveCancelBlock` / `overtimeCancelBlock` and `GuardedButton`.
+- Saved browser data has a `version`; `engine.migrate` upgrades older data in place. Bump `DATA_VERSION` and extend `migrate` when the shape changes.
+- HR pages: `/hr/salary` (rules, overtime per division, pay, leave allowance), `/hr/approvals`, `/hr/attendance`.
+  `/hr/offers` redirects to `/hr/salary#overtime` (`next.config.ts`).
 
 ## 5. Rules for AI content
 

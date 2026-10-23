@@ -224,3 +224,26 @@ instead of the Vite Cash Guard app (Cash Guard stays in git history up to commit
 - **`/tes-ai`** (T2's test page) was moved over unchanged; it still calls T1's `/api/ai-test`.
 - **Checks:** 34 automatic tests (pay rules, actions, AI answer handling), typecheck and build. Clicked through the 8 demo
   scenarios from the spec in Chrome with the real AI.
+
+## Revision: more flexible, payroll stays safe (24 Oct 2026)
+
+Everything can be undone where it makes sense, but nothing in a paid month can change, and every undo or edit is in the activity log.
+
+- **HR can undo a decision.** Approvals → "Decided and closed" → "Revert to pending" (with a confirmation). Pay is recalculated.
+  Blocked with "This period has been paid" once the month is paid; overtime already marked done can't go back.
+- **Salary & leave controls** (`/hr/salary`, was "Salary controls"): Global rules → Overtime rules and offers (moved here from
+  the old Overtime offers page) → Pay per employee → Leave allowance per employee. Each employee now has a **division**
+  (Café floor, Roastery, Logistics, Office); a division can have its own overtime rate (labelled Override) instead of the
+  global one (labelled Default). The allowance is 14 days by default; only approved "Leave"-type days count as used.
+- **Dashboard:** the "Employees with deductions" card has a "View deductions" link; the list below only shows people
+  with a deduction, or "No deductions this period".
+- **Attendance** (`/hr/attendance`, new): HR corrects a day (present / absent / izin, minutes late). The correction is stored
+  next to the imported attendance (which is never changed), marked "Edited by HR", can be reset, and is logged with old → new.
+- **"Today" is the real date (Malaysia time).** Attendance is "imported" only for days that have passed; future days are not
+  counted as absent, so October pay is an estimate until the month is over.
+- **Employees:** requests are saved instantly (the AI reads the leave reason in the background and HR sees its summary later).
+  Pending: edit or withdraw (HR gets an update). Approved and not yet taken/worked: ask HR to cancel (shows up in HR's
+  approvals as a cancellation request). Rejected: resubmit, prefilled. Withdrawn and cancelled requests stay in history.
+- **Saved data:** browser data now has a version number. Older saved data is upgraded automatically (new fields added,
+  nothing removed). Other tabs of the same browser update at once; other devices don't (there is no server).
+- **Checks:** 47 automatic tests (13 new for these rules) and a browser click-through of all 8 items.
