@@ -11,9 +11,9 @@
 | **Team Name**          | SPNG                                        |
 | **Team Domain**        | Domain 2                                    |
 | **SDG Track (1–17)**   | e.g. SDG 11 — Sustainable Cities and Communities |
-| **Team Leader**        | Leader Name                                 |
-| **University**         | University Name(s)                          |
-| **Number of Members**  | e.g. 4                                      |
+| **Team Leader**        | Dixson Oswaldo Tanjaya                      |
+| **University**         | Xiamen University Malaysia                  |
+| **Number of Members**  | 5                                           |
 
 ## Links
 
