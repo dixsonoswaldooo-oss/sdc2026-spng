@@ -8,8 +8,8 @@
 
 | Field                  | Details                                     |
 | ---------------------- | ------------------------------------------- |
-| **Team Name**          | Your Team Name                              |
-| **Team Domain**        | Domain 1 / Domain 2 *(choose one)*          |
+| **Team Name**          | SPNG                                        |
+| **Team Domain**        | Domain 2                                    |
 | **SDG Track (1–17)**   | e.g. SDG 11 — Sustainable Cities and Communities |
 | **Team Leader**        | Leader Name                                 |
 | **University**         | University Name(s)                          |
