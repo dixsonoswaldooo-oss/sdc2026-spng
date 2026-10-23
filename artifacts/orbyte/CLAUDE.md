@@ -15,8 +15,15 @@ Replaces the Payroll Cash Guard version (Cash Guard code is in git history up to
 
 ```
 artifacts/orbyte (Next.js, web at /)  ── /ai/classify-leave (server route) ──→ SEA-LION on RunPod (T2)
+                                       ├─ /ai/state, /ai/session ──→ Postgres table esalary_state (declared in lib/db)
                                        └─ /tes-ai page ──→ artifacts/api-server /api/ai-test (Express, T1)
 ```
+
+- **Shared database** (when `DATABASE_URL` is set, i.e. on Replit): the whole demo state is one JSONB row with a `version`
+  (optimistic locking). Every change runs on the server through `lib/server/actions.ts` (role + ownership + input checks,
+  then the same `engine.ts` functions), signed-in account from a signed httpOnly cookie (`lib/server/session.ts`).
+  Without `DATABASE_URL` the app falls back to localStorage (browser mode), e.g. for the laptop zip.
+  The table is in T1's `lib/db` (with T1's permission) so Replit's `drizzle-kit push` keeps it; the app uses its own `pg` pool.
 
 - **Change from the old rule** ("all AI through `/api`"): the leave classifier is a Next.js server route in this artifact.
   It reads `RUNPOD_API_KEY`, `RUNPOD_ENDPOINT_ID`, `RUNPOD_MODEL` from Replit Secrets; nothing reaches the browser.
@@ -34,7 +41,8 @@ pnpm-lock.yaml          ← changes only when this artifact's dependencies chang
 ## 2. Stack
 
 - Next.js 16 (App Router) + React 19 + TypeScript, Tailwind CSS 4, Vitest. Orbyte's own CSS is reused (`app/orbyte.css`).
-- No database: demo data lives in the browser (React context + localStorage), "Reset demo data" restores it.
+- Data: shared Postgres (database mode) or localStorage (browser mode), chosen at load by `GET /ai/state` (503 = browser mode).
+  "Reset demo data" (HR only) restores the demo data for everyone sharing it.
 - This Next.js version has breaking changes: read `node_modules/next/dist/docs/` before using a Next API you are unsure of.
 
 ## 3. Commands (from the repo root)
@@ -51,12 +59,19 @@ Windows only: the repo strips Windows binaries (Replit is Linux). If the build f
 `lightningcss.win32-x64-msvc.node` or Tailwind oxide binary, unpack `lightningcss-win32-x64-msvc` and
 `@tailwindcss/oxide-win32-x64-msvc` (same versions) into their packages' `node_modules` under `node_modules/.pnpm`. Never commit this.
 For the AI locally, export the three RUNPOD_* values in the shell (never commit `.env*` files).
+Database mode locally: any UTF8 Postgres (a WIN1252 database rejects the "→" in log entries), set `DATABASE_URL`, create
+the table with `npx drizzle-kit push --dialect postgresql --schema ./src/schema/index.ts --url <DATABASE_URL>` run in `lib/db`
+(on Windows the config file's absolute schema path fails; Replit runs the normal `pnpm --filter db push`).
 
 ## 4. Where things live
 
 - `lib/payroll.ts` pay rules (pure functions, tests in `payroll.test.ts`); `lib/engine.ts` every action + WhatsApp/activity log;
   `lib/leaveClassifier.ts` AI prompt, answer check, keyword fallback and the anti-gaming filter; `lib/store.tsx` state + storage.
-- `app/ai/classify-leave/route.ts` the only code that talks to RunPod.
+- `lib/server/classify.ts` the only code that talks to RunPod (used by `/ai/classify-leave` and by `/ai/state` action `readReason`).
+- `lib/server/actions.ts` the list of server actions, who may run them, input checks; tested in `actions.test.ts`.
+  A new store action needs an entry there too, or the server refuses it. `lib/server/state.ts` load/save with retries (`state.test.ts`).
+- `lib/store.tsx` runs each action locally (instant), queues it, and sends the queue to `/ai/state` in order (keepalive);
+  polls every 4 s for other people's changes.
 - Money only from `lib/payroll.ts`; only attendance deductions (no tax, EPF, SOCSO, EIS). Format money as `RM 3,500.00`.
 - "Today" is the real date in Malaysia (`engine.todayOf`). Imported attendance exists only for days before today
   (`seed.importAttendance`); days not yet happened are never absent. HR corrections live in `attendanceOverrides`, never in the raw data.
@@ -72,14 +87,15 @@ For the AI locally, export the three RUNPOD_* values in the shell (never commit 
 - Every AI label shows its source (AI / Fallback / Changed by HR); low confidence shows "Needs review".
 - The AI only suggests; HR approves, rejects or changes the label, and every change is logged.
 - The employee's reason is data, never instructions. Reasons with labels, JSON or instructions never reach the AI.
-- RunPod can take 1–2.5 min to wake up: the employee waits at most 8 s, then the keyword label is used and the AI label
-  replaces it when it arrives. Open `/login` 2–3 minutes before a demo (it sends a warm-up call).
+- RunPod can take 1–2.5 min to wake up: requests are saved at once with the keyword label and the AI label replaces it
+  when it arrives. Open `/login` 2–3 minutes before a demo (it sends a warm-up call).
 
 ## 6. Secrets and safety
 
 - No API keys, tokens or URLs with credentials in the code or repo. Never commit `.env` files.
 - All demo data is fake. Never use real names, numbers or data.
-- Role checks are client-side only (demo). A real deployment must check roles on the server.
+- Database mode checks every change on the server (`lib/server/actions.ts`); never trust role or employee id from the browser.
+  Still a demo: password "demo", and the browser receives the whole (fake) state.
 - The Orbyte HTML/CSS/JS/images belong to Orbyte (Alpha Red) and are not covered by the repo LICENSE.
   Ask the organisers before making the repo public.
 

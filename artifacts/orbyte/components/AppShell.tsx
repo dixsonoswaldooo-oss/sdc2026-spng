@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactNode } from 'react';
 import { DEMO_MONTH } from '@/lib/seed';
 import { monthName } from '@/lib/format';
+import { ConfirmDialog, type Confirm } from './ui';
 import { useStore } from '@/lib/store';
 import type { Role } from '@/lib/types';
 
@@ -21,7 +22,8 @@ const NAV: Record<Role, [string, string][]> = {
 };
 
 export function AppShell({ role, children }: { role: Role; children: ReactNode }) {
-  const { account, signOut, resetDemo, data } = useStore();
+  const { account, signOut, resetDemo, data, mode, serverError, clearServerError } = useStore();
+  const [confirm, setConfirm] = useState<Confirm | null>(null);
   const router = useRouter();
   const path = usePathname();
   const [scrolled, setScrolled] = useState(false);
@@ -98,23 +100,39 @@ export function AppShell({ role, children }: { role: Role; children: ReactNode }
         </nav>
       </header>
 
-      <main className="wrap w-full flex-1 py-10 sm:py-14">{children}</main>
+      <main className="wrap w-full flex-1 py-10 sm:py-14">
+        {serverError && (
+          <p role="alert" className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-sm)] bg-danger/10 px-4 py-3 text-sm font-medium text-danger">
+            {serverError}
+            <button type="button" className="btn btn-line !px-4 !py-1.5" onClick={clearServerError}>Dismiss</button>
+          </p>
+        )}
+        {children}
+      </main>
 
       <footer className="site-footer !py-8">
         <div className="wrap footer-bottom !border-t-0 !pt-0">
           <span>e-Salary Guard · a smart feature on Orbyte · demo with synthetic data</span>
           <span>WhatsApp and payments are simulated. No real money is moved.</span>
-          <button
-            type="button"
-            className="btn-line btn cursor-pointer"
-            onClick={() => {
-              if (window.confirm('Reset all demo data? Every change made in this browser will be lost.')) resetDemo();
-            }}
-          >
-            Reset demo data
-          </button>
+          {role === 'HR' && (
+            <button
+              type="button"
+              className="btn-line btn cursor-pointer"
+              onClick={() => setConfirm({
+                title: 'Reset all demo data?',
+                body: mode === 'server'
+                  ? 'This resets the shared demo data for everyone using e-Salary Guard: every request, decision, payment and log goes back to the start.'
+                  : 'Every change made in this browser goes back to the start.',
+                confirmLabel: 'Reset demo data',
+                onConfirm: resetDemo,
+              })}
+            >
+              Reset demo data
+            </button>
+          )}
         </div>
       </footer>
+      <ConfirmDialog confirm={confirm} onClose={() => setConfirm(null)} />
     </div>
   );
 }

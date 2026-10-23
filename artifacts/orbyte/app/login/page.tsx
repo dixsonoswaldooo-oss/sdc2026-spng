@@ -7,7 +7,7 @@ import { ACCOUNTS, COMPANY, EMPLOYEES } from '@/lib/seed';
 import { useStore } from '@/lib/store';
 
 export default function LoginPage() {
-  const { account, signIn, resetDemo } = useStore();
+  const { account, signIn } = useStore();
   const router = useRouter();
   const [email, setEmail] = useState(ACCOUNTS[0].email);
   const [password, setPassword] = useState('demo');
@@ -22,7 +22,7 @@ export default function LoginPage() {
     fetch('/ai/classify-leave', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ warmup: true }) }).catch(() => {});
   }, []);
 
-  const go = (id: string) => signIn(id);
+  const go = (id: string) => signIn(id).catch((e: Error) => setError(e.message));
   const submit = (event: FormEvent) => {
     event.preventDefault();
     const found = ACCOUNTS.find((a) => a.email.toLowerCase() === email.trim().toLowerCase());
@@ -93,15 +93,6 @@ export default function LoginPage() {
                 );
               })}
             </ul>
-            <button
-              type="button"
-              className="btn btn-line mt-5 !text-[0.8rem]"
-              onClick={() => {
-                if (window.confirm('Reset all demo data? Every change made in this browser will be lost.')) resetDemo();
-              }}
-            >
-              Reset demo data
-            </button>
           </div>
         </Reveal>
       </main>

@@ -19,7 +19,7 @@ Open http://localhost:5173. Click **e-Salary Guard** in the top menu (or **Open 
 Other commands: `run test` (Vitest), `run typecheck`, `run build`. Windows notes are in `CLAUDE.md`.
 
 **On Replit:** Tools → Git → Pull, then run the app (the artifact's `dev` command serves it at `/`), then Publish.
-The RUNPOD_* values come from Replit Secrets. Every `/api` request goes to T1's `artifacts/api-server`, which is why
+The RUNPOD_* values and DATABASE_URL come from Replit Secrets. Every `/api` request goes to T1's `artifacts/api-server`, which is why
 the leave classifier lives at `/ai/classify-leave`.
 
 ## Demo accounts
@@ -37,7 +37,24 @@ Password for all of them: `demo`. On the sign-in page, one click on a card signs
 | Nurul Izzah | nurul@kopikawan.my | Pending leave with a holiday reason |
 
 All names, numbers and the company (Kopi Kawan Trading Sdn Bhd) are made up. Demo month: October 2026.
-September 2026 is already paid. **Reset demo data** (in the header once signed in) puts everything back.
+September 2026 is already paid. **Reset demo data** (footer, HR accounts only, after a confirmation) puts everything back.
+
+## Shared database (Replit)
+
+With `DATABASE_URL` set (Replit provides it), everyone uses **one shared state** in Postgres: an employee's request on a
+phone shows up on HR's laptop within a few seconds, and HR's decision shows up on the phone. Without it (e.g. the zip on
+a laptop), each browser keeps its own copy in localStorage, as before.
+
+- The table `esalary_state` is declared in `lib/db/src/schema/esalary.ts`; Replit's post-merge `drizzle-kit push` creates it.
+  It holds the whole demo state as one JSON row with a `version`, so two saves at once can't overwrite each other.
+  The database must be UTF8 (Replit's is).
+- `/ai/session` signs in (demo password `demo`) and sets a signed, httpOnly cookie. `/ai/state` loads the state and runs
+  every change **on the server**, checked against that account (`lib/server/actions.ts`): HR-only actions, employees only
+  on their own requests, input type-checked. Optional secret `SESSION_SECRET` signs the cookie (otherwise a key derived
+  from `DATABASE_URL` is used).
+- The browser shows a change at once, then sends it to the server in order; the server's answer wins. If the server
+  refuses (e.g. someone else decided first), a red banner explains why and the real state is shown.
+- All judges and teammates share the same demo data, so one person's actions are visible to the others.
 
 ## AI for leave reasons (optional)
 
@@ -57,7 +74,7 @@ Tested live on 2026-10-23 (model `sealion` = aisingapore/gemma-sea-lion-v3-9b-it
 Malay and Indonesian labelled correctly, about 2 s each.
 
 - **Cold start:** by default a RunPod endpoint keeps no worker running and lets one sleep 5 s after its last job, so the
-  first answer can take 1–2.5 minutes. The app never makes the employee wait for that: after 8 s the request is saved with
+  first answer can take 1–2.5 minutes. The app never makes the employee wait for that: the request is saved at once with
   the keyword label, and the AI's label replaces it on its own when it arrives (unless HR already changed or decided it).
   Opening `/login` also sends a background warm-up call, so **open the sign-in page 2–3 minutes before a demo**.
   For no cold starts at all, set the endpoint's **Active workers to 1** in RunPod on demo day (billed while idle; set it back to 0 after).
@@ -67,15 +84,17 @@ Malay and Indonesian labelled correctly, about 2 s each.
 
 ## How it is built
 
-- Next.js App Router, TypeScript, Tailwind. No database: data lives in the browser (React context + localStorage).
+- Next.js App Router, TypeScript, Tailwind. Data: shared Postgres when `DATABASE_URL` is set, else the browser's localStorage.
 - `lib/payroll.ts`: the pay rules as pure functions, tested in `lib/payroll.test.ts`.
   Only attendance deductions (late, absent, unpaid leave). No tax, EPF, SOCSO or EIS.
 - `lib/engine.ts`: every action (approve, pay, change a rule) and the WhatsApp/activity-log side effects, tested in `lib/engine.test.ts`.
 - `lib/leaveClassifier.ts`: the AI prompt, answer check and keyword fallback. The employee's reason is treated as data, not instructions.
 - AI only suggests (tolerated / deducted). HR always decides and can change the label; every change is logged.
 - Paying a month locks it (references `PAY-YYYYMM-NNN`). Payment is simulated: no money moves.
-- Roles: an employee who opens an `/hr` page is sent back to their own dashboard and only sees their own data.
-  This is a front-end demo; a real deployment must check roles on the server.
+- Roles: with the database, every change is checked on the server against the signed-in account. Screens also send an
+  employee who opens an `/hr` page back to their own dashboard. Still a demo: sign-in has no real passwords, and the
+  browser receives the whole (made-up) demo state, of which employee screens only show their own part.
+- Payslips: the running month shows as "not paid yet" and updates live; paid months are frozen snapshots.
 - `public/index.html`, `public/css`, `public/js`, `public/assets`: the Orbyte page, with only these changes:
   analytics beacon removed, links to other Orbyte pages point to orbyte.my, and the e-Salary Guard menu link,
   section and footer link added. The app pages reuse Orbyte's CSS and colours.

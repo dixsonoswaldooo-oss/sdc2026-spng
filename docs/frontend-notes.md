@@ -247,3 +247,19 @@ Everything can be undone where it makes sense, but nothing in a paid month can c
 - **Saved data:** browser data now has a version number. Older saved data is upgraded automatically (new fields added,
   nothing removed). Other tabs of the same browser update at once; other devices don't (there is no server).
 - **Checks:** 47 automatic tests (13 new for these rules) and a browser click-through of all 8 items.
+
+## Shared database (24 Oct 2026)
+
+e-Salary Guard now keeps its data in **one shared Postgres database on Replit** instead of in each browser, so HR on a
+laptop and an employee on a phone see the same requests and decisions within a few seconds.
+
+- **Where the data is:** table `esalary_state` (declared in `lib/db/src/schema/esalary.ts`, added with T1's permission;
+  Replit's post-merge `pnpm --filter db push` creates it). One row holds the whole demo state as JSON, with a version number.
+- **Who may do what is checked on the server** (`artifacts/orbyte/lib/server/actions.ts`): HR-only actions, employees only
+  on their own requests, input type-checked, signed sign-in cookie. Tested: an employee calling an HR action gets 403,
+  a forged cookie 401.
+- **Reset demo data** is HR-only now and asks for confirmation, because it resets the data for everyone.
+- **Payslips:** the running month now shows as "not paid yet" and updates by itself; paid months stay frozen.
+- **Without a database** (the laptop zip) the app works as before, each browser with its own copy.
+- **Checks:** 57 automatic tests; in the browser, with a real Postgres: 8 demo scenarios, 8 revision items, and a
+  two-device test (a request from one device shows up on the other in about 2 seconds, a decision in under a second).
