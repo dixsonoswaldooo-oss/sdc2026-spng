@@ -1,5 +1,6 @@
 'use client';
-// Payment history from the frozen snapshots, newest month first. Employees see only their own line.
+// Payment history from the frozen snapshots, newest month first, plus the running month as a live draft (run.draft).
+// Employees see only their own line.
 import { useState } from 'react';
 import { dateTime, monthName } from '@/lib/format';
 import type { PaymentRun } from '@/lib/types';
@@ -19,15 +20,16 @@ export function PaymentRuns({ runs, onlyEmployeeId }: { runs: PaymentRun[]; only
           <Panel key={run.month}>
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <span className="eyebrow">{onlyEmployeeId ? 'Payslip' : 'Payment run'}</span>
+                <span className="eyebrow">{onlyEmployeeId ? 'Payslip' : 'Payment run'}{run.draft && ' · not paid yet'}</span>
                 <h2 className="mt-1">{monthName(run.month)}</h2>
                 <p className="mt-1 text-sm text-muted">
-                  Paid {dateTime(run.paidAt)} by {run.paidBy}
-                  {onlyEmployeeId ? ` · reference ${lines[0]?.reference}` : ` · ${run.lines[0].reference} to ${run.lines[run.lines.length - 1].reference}`}
+                  {run.draft
+                    ? 'Estimate: updates as soon as attendance, overtime or leave changes. Final when HR pays the month.'
+                    : <>Paid {dateTime(run.paidAt)} by {run.paidBy}{onlyEmployeeId ? ` · reference ${lines[0]?.reference}` : ` · ${run.lines[0].reference} to ${run.lines[run.lines.length - 1].reference}`}</>}
                 </p>
               </div>
               <div className="text-right">
-                <Badge tone="success">Paid</Badge>
+                {run.draft ? <Badge tone="warn">Not paid yet · estimate</Badge> : <Badge tone="success">Paid</Badge>}
                 {!onlyEmployeeId && <p className="mt-2 text-sm text-muted">{run.lines.length} employees · total <Money amount={run.total} className="font-semibold text-navy" /></p>}
               </div>
             </div>
@@ -43,7 +45,7 @@ export function PaymentRuns({ runs, onlyEmployeeId }: { runs: PaymentRun[]; only
                       const key = `${run.month}|${l.employeeId}`;
                       return [
                         <tr key={key}>
-                          <td className={`${TD} tabular text-xs`}>{l.reference}</td>
+                          <td className={`${TD} tabular text-xs`}>{l.reference || '—'}</td>
                           <td className={TD}>{l.employeeName}</td>
                           <td className={TD}><Money amount={l.gross} /></td>
                           <td className={`${TD} ${l.totalDeductions ? 'text-danger' : ''}`}><Money amount={l.totalDeductions} minus /></td>

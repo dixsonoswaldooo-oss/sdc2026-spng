@@ -105,6 +105,23 @@ describe('demo scenarios from the spec', () => {
   });
 });
 
+describe('running month in payment history and payslips', () => {
+  it('is a live draft of every employee until paid, then the frozen payment takes over', () => {
+    const d0 = engine.freshData(hr);
+    const draft = engine.draftRun(d0, '2026-10')!;
+    expect([draft.draft, draft.lines.length, draft.lines[0].reference]).toEqual([true, 6, '']);
+    expect(draft.total).toBe(Math.round(draft.lines.reduce((t, l) => t + l.netPay, 0) * 100) / 100);
+
+    const d1 = engine.requestOvertime(d0, as('Ahmad Faiz'), 'E1', { date: '2026-10-28', hours: 2, note: 'Stock count' });
+    const id = d1.overtime[0].id;
+    const d2 = engine.moveOvertime(engine.moveOvertime(d1, hr, id, 'APPROVED'), as('Ahmad Faiz'), id, 'COMPLETED');
+    const ahmad = (d: engine.Data) => engine.draftRun(d, '2026-10')!.lines.find((l) => l.employeeId === 'E1')!.netPay;
+    expect(ahmad(d2)).toBe(ahmad(d0) + 36);
+
+    expect(engine.draftRun(engine.payMonth(d2, hr, '2026-10'), '2026-10')).toBeNull();
+  });
+});
+
 describe('WhatsApp only when something changes', () => {
   it('approving a tolerated leave removes the absence and says so', () => {
     const d0 = engine.freshData(hr);

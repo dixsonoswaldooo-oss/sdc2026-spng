@@ -6,7 +6,7 @@ import { computePayroll, datesBetween, deductionMessage, workingDays } from './p
 import { DEFAULT_LEAVE_DAYS, DEMO_MONTH, DIVISIONS, EMPLOYEES, importAttendance, seedState } from './seed';
 import type {
   ActivityEntry, ActivityKind, AttendanceOverride, AttendanceRecord, Employee, HrNotification, ISODate, LeaveClassification,
-  LeaveLabel, LeaveRequest, LeaveType, Month, Overtime, PaymentLine, PayrollBreakdown, PayrollConfig, WhatsAppMessage,
+  LeaveLabel, LeaveRequest, LeaveType, Month, Overtime, PaymentLine, PaymentRun, PayrollBreakdown, PayrollConfig, WhatsAppMessage,
 } from './types';
 
 export const DATA_VERSION = 2;
@@ -525,6 +525,13 @@ export const decideOvertimeCancellation = (data: Data, ctx: Ctx, id: string, app
   });
 
 // ---------- Payroll ----------
+
+/** The running month shaped like a payment (no references yet), so history and payslips can show it. Null once paid. */
+export function draftRun(d: Data, month: Month): PaymentRun | null {
+  if (isPaid(d, month)) return null;
+  const lines: PaymentLine[] = d.employees.map((e) => ({ ...payrollFor(d, e.id, month), reference: '', employeeName: e.name }));
+  return { month, paidAt: '', paidBy: '', total: toSen(lines.reduce((t, l) => t + l.netPay, 0)), lines, draft: true };
+}
 
 export function payMonth(data: Data, ctx: Ctx, month: Month): Data {
   if (isPaid(data, month)) throw new Error(`${monthName(month)} has already been paid.`);

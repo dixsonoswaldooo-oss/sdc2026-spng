@@ -263,3 +263,5 @@ laptop and an employee on a phone see the same requests and decisions within a f
 - **Without a database** (the laptop zip) the app works as before, each browser with its own copy.
 - **Checks:** 57 automatic tests; in the browser, with a real Postgres: 8 demo scenarios, 8 revision items, and a
   two-device test (a request from one device shows up on the other in about 2 seconds, a decision in under a second).
+- **Payment history (HR)** now also shows the running month for every employee as "Not paid yet · estimate", updating
+  live; once HR pays, it becomes the frozen paid snapshot. The employee's Payslips page uses the same view.

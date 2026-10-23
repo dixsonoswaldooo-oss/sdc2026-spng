@@ -94,7 +94,8 @@ Malay and Indonesian labelled correctly, about 2 s each.
 - Roles: with the database, every change is checked on the server against the signed-in account. Screens also send an
   employee who opens an `/hr` page back to their own dashboard. Still a demo: sign-in has no real passwords, and the
   browser receives the whole (made-up) demo state, of which employee screens only show their own part.
-- Payslips: the running month shows as "not paid yet" and updates live; paid months are frozen snapshots.
+- Payslips and HR Payment history: the running month shows as "not paid yet" for everyone and updates live
+  (`engine.draftRun`); paid months are frozen snapshots.
 - `public/index.html`, `public/css`, `public/js`, `public/assets`: the Orbyte page, with only these changes:
   analytics beacon removed, links to other Orbyte pages point to orbyte.my, and the e-Salary Guard menu link,
   section and footer link added. The app pages reuse Orbyte's CSS and colours.

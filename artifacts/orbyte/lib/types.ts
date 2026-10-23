@@ -139,6 +139,7 @@ export interface PaymentRun {
   paidBy: string;
   total: number;
   lines: PaymentLine[];
+  draft?: true; // the running month, not paid yet: recalculated live, never stored
 }
 
 export interface WhatsAppMessage {
