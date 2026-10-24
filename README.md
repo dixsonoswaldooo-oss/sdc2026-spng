@@ -191,9 +191,6 @@ Most importantly, we learned that communication and proper task distribution are
 ## Future Improvements
 
 - Enhanced AI Accuracy: Improve the AI model's accuracy and reliability to provide more precise salary-related insights and detect potential payroll discrepancies more effectively.
-- Real-Time Payroll Integration: Integrate the system with existing payroll platforms to retrieve up-to-date salary information and automatically identify inconsistencies.
-- Stronger Security and Data Privacy: Implement multi-factor authentication, data encryption, and stricter access controls to protect sensitive employee and salary information.
-- Personalized Salary Insights: Provide personalized dashboards and reports to help employees better understand their salary breakdowns, deductions, and payment history.
 - Scalability and Performance: Optimize the system to handle larger datasets and more users while maintaining fast response times and stable performance.
 - Improved User Experience: Enhance the interface to make the system more intuitive, mobile-friendly, and accessible to users with different levels of technical knowledge.
 
