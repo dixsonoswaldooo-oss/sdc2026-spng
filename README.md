@@ -1,4 +1,4 @@
-# Project Name
+# E-Salary Guard
 
 > A one-sentence description of what your project does and who it is for.
 
@@ -32,17 +32,23 @@
 
 ### Problem
 
-Describe the real-world problem you are solving in 2–4 sentences. Who is affected, and why does it matter?
+Many small and medium-sized businesses manage employee attendance, overtime, leave, and payroll separately, often relying on manual calculations that can lead to salary errors. Employees may only discover unexpected salary deductions on payday, causing confusion, complaints, and a lack of transparency. HR teams also spend significant time calculating salaries and handling payroll-related issues.
 
 ### Solution
 
-Explain how your project uses AI to solve the problem and what makes it valuable.
+e-Salary Guard is an AI-powered payroll management system that automatically calculates employees’ net salaries based on attendance, overtime, bonuses, and leave records. Its AI feature classifies leave requests based on the reasons provided, helping HR review requests more efficiently. The system also provides early WhatsApp-style notifications about salary deductions, transparent salary breakdowns, and activity logs to improve accountability and reduce payroll disputes.
 
 ### Key Features
 
-- **Feature 1** — Short description.
-- **Feature 2** — Short description.
-- **Feature 3** — Short description.
+- AI-Powered Leave Classification — Classifies leave requests as tolerated or subject to salary deductions, with confidence scores and HR review.
+
+- Automated Payroll & Salary Insights — Calculates net salaries automatically and provides HR with insights into salary costs, overtime, bonuses, and deductions.
+
+- Early Deduction Notifications — Sends simulated WhatsApp notifications to inform employees about salary deductions, their reasons, and estimated net salaries before payday.
+
+- Transparent Activity Logs — Records salary changes, HR decisions, recalculations, and payroll payments to improve accountability.
+
+- One-Click Payroll Processing — Allows HR to review salary breakdowns and process payroll through a controlled confirmation workflow.
 
 ### Tech Stack
 
@@ -175,9 +181,12 @@ curl -X POST https://api.runpod.ai/v2/$RUNPOD_ENDPOINT_ID/runsync \
 
 | Name        | Role                | GitHub                                   |
 | ----------- | ------------------- | ---------------------------------------- |
-| Member Name | Team Lead / Backend | [@username](https://github.com/username) |
-| Member Name | Frontend            | [@username](https://github.com/username) |
-| Member Name | AI / RunPod         | [@username](https://github.com/username) |
+| Dixson Oswaldo Tanjaya | Team Lead / Backend | [@dixsonoswaldooo-oss](https://github.com/dixsonoswaldooo-oss) |
+| Gregorius Marvel Wicaksana | Frontend            | [@marvelwicaksana-hue](https://github.com/marvelwicaksana-hue) |
+| Manuel Otto Chandra | AI / RunPod         | [@manuism](https://github.com/manuism) |
+| Owen Ferdinand Lee | Frontend            | [@owennew2015](https://github.com/owennew2015) |
+| Sunu Adi Sotya | AI / RunPod         | [@username](https://github.com/username) |
+
 
 ---
 
