@@ -64,47 +64,68 @@ e-Salary Guard is an AI-powered payroll management system that automatically cal
 ## Project Structure
 
 ```
-e-salary-guard/
-├── app/                                
-│   ├── employee/
-│   │   ├── dashboard/                  
-│   │   ├── leave-applications/        
-│   │   ├── overtime-requests/         
-│   │   └── payslips/                 
-│   ├── hr/
-│   │   ├── dashboard/                 
-│   │   ├── salary-rules/              
-│   │   ├── attendance/                
-│   │   ├── leave-approvals/            
-│   │   ├── overtime-approvals/         
-│   │   ├── deductions/             
-│   │   ├── payroll/                    
-│   │   └── activity-history/           
-│   └── api/                            
-├── components/                     
-├── services/
-│   ├── attendance-service             
-│   ├── leave-service                  
-│   ├── overtime-service                
-│   ├── salary-rules-service           
-│   ├── deduction-service              
-│   ├── payroll-service                
-│   ├── notification-service           
-│   └── activity-log-service           
-├── integrations/
-│   ├── directory/                     
-│   ├── attendance/                    
-│   ├── eleave/                       
-│   ├── eot/                           
-│   └── payroll-connect/                
-├── ai/
-│   └── leave-reason-advisor/            
-├── database/
-│   ├── schema/                         
-│   └── migrations/                      
-├── tests/                             
-├── .env.example                        
-├── package.json
+.
+├── docs/                                  # Design notes, API contract, workflow write-ups
+│   ├── frontend-notes.md                  # Plain-language notes: every file and how data flows
+│   ├── frontend-api-contract.md           # Request/response shapes between app and server routes
+│   ├── frontend-api-requests.md           # Changes requested from the backend team
+│   ├── frontend-brief.md                  # Original build brief
+│   └── esalary-orbyte-workflow.md         # How e-Salary Guard plugs into Orbyte People
+├── runpod/                                # (no custom handler) SEA-LION runs on RunPod's prebuilt vLLM
+│                                          #   serverless worker; we call its OpenAI-compatible endpoint
+│                                          #   from artifacts/orbyte/lib/server/classify.ts
+├── artifacts/orbyte/                      # Application source (Next.js 16 + React 19 + TypeScript)
+│   ├── app/                               # Pages and server routes (App Router)
+│   │   ├── layout.tsx                     # Application entry point: root layout, store + language providers
+│   │   ├── login/page.tsx                 # Sign-in, demo accounts, demo space, language switch
+│   │   ├── hr/                            # HR portal
+│   │   │   ├── page.tsx                   # Dashboard: "What needs you now", Try it live
+│   │   │   ├── salary/page.tsx            # Workers & pay: search, departments, add worker, overtime offers
+│   │   │   ├── rates/page.tsx             # Overtime and deduction rates, overtime per department
+│   │   │   ├── approvals/page.tsx         # Leave and overtime decisions (AI suggestion, HR decides)
+│   │   │   ├── payroll/page.tsx           # Current month: review and pay everyone (locks the month)
+│   │   │   ├── payments/page.tsx          # Payment history with month picker
+│   │   │   ├── whatsapp/page.tsx          # Messages: one two-way conversation per worker
+│   │   │   └── activity/page.tsx          # Read-only activity log
+│   │   ├── employee/                      # Employ
+│   │   │   ├── page.tsx                   # My salary: one-sentence summary + breakdown
+│   │   │   ├── requests/page.tsx          # Ask fo
+│   │   │   ├── offers/page.tsx            # Accept overtime offers, mark overtime done
+│   │   │   ├── inbox/page.tsx             # Messageplies)
+│   │   │   └── payslips/page.tsx          # Live and paid payslips
+│   │   └── ai/                            # Serverlers)
+│   │       ├── state/route.ts             # Load/save demo state; every action checked against the session
+│   │       ├── session/route.ts           # Sign iie)
+│   │       ├── space/route.ts             # Per-visitor demo spaces
+│   │       └── classify-leave/route.ts    # Leave--LION on RunPod
+│   ├── components/                        # Shared UI: AppShell, Conversation, LangProvider, PaymentRuns, ...
+│   ├── lib/                               # Helper
+│   │   ├── payroll.ts                     # Pay formula: base, bonus, overtime, late/absence/leave cuts
+│   │   ├── engine.ts                      # Every lated), activity log
+│   │   ├── leaveClassifier.ts             # AI prompt, answer validation, keyword fallback, injection filter
+│   │   ├── i18n.tsx, i18n-dict.ts         # Englistranslations
+│   │   ├── store.tsx                      # App state: database mode or browser mode
+│   │   ├── format.ts, words.ts, seed.ts   # Money/, synthetic demo data
+│   │   └── server/                        # Server-only: actions (permissions), session, space, state, classify
+│   ├── public/index.html                  # Orbyte-Salary Guard slot
+│   ├── .env.example                       # Example environment variables (no real keys)
+│   ├── next.config.ts                     # Redire
+│   └── package.json                       # App dependencies and scripts (dev, build, test, typecheck)
+├── lib/db/                                # Databaalary_state on Replit PostgreSQL
+├── submission/                            # Required submission documents
+│   ├── SDC2026_SPNG_Preliminary.pdf       # Prelimto add)
+│   ├── SDC2026_SPNG_TechDeclaration.pdf   # Technology declaration            (to add)
+│   ├── SDC2026_SPNG_Replit_POU.pdf        # Replit
+│   └── SDC2026_SPNG_Runpod_POU.pdf        # RunPod proof of use
+├── tests/                                 # (testsst, run with Vitest)
+│                                          #   artifacts/orbyte/lib/*.test.ts and lib/server/*.test.ts:
+│                                          #   payr actions, state, space,
+│                                          #   workers, flexibility, i18n — 73 tests
+├── .gitignore
+├── .replit                                # Replit run and deployment configuration (autoscale)
+├── LICENSE
+├── package.json, pnpm-lock.yaml,          # Node.js dependencies (the JavaScript equivalent of
+│   pnpm-workspace.yaml                    #   requ
 └── README.md
 ```
 
