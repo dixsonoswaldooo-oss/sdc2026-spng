@@ -22,7 +22,7 @@ e-Salary Guard is an AI-powered payroll management system that helps SMEs monito
 | GitHub Repository | https://github.com/dixsonoswaldooo-oss/sdc2026-spng |
 | Live Demo         | https://sdc-2026-spng.replit.app/login         |
 | RunPod Endpoint   | https://api.runpod.ai/v2/u0u1ewu0meordn        |
-| Slide Deck        | https://example.com/slides                     |
+| Slide Deck        | [`submission/SlideDeck_SPNG.pdf`](submission/SlideDeck_SPNG.pdf)                     |
 | Demo Video        | https://example.com/demo-video                 |
 
 ---
