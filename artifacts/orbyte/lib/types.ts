@@ -21,6 +21,7 @@ export interface Employee {
   bonus: number; // MYR per month
   division: string; // groups positions for overtime rules, e.g. "Café floor"
   annualLeaveDays: number; // yearly allowance of "Leave"-type days
+  startDate?: ISODate; // added by HR: days before this are not worked, so never absent
 }
 
 /** One working day from the attendance system (synthetic). No clockIn = did not come in. */
@@ -147,11 +148,11 @@ export interface WhatsAppMessage {
   employeeId: string;
   to: string;
   at: string;
-  kind: 'DEDUCTION' | 'DEDUCTION_UPDATE' | 'OVERTIME_OFFER';
+  kind: 'DEDUCTION' | 'DEDUCTION_UPDATE' | 'OVERTIME_OFFER' | 'HR_MESSAGE' | 'REPLY'; // REPLY = from the worker to HR
   text: string;
 }
 
-export type ActivityKind = 'LOGIN' | 'CONFIG' | 'REQUEST' | 'DECISION' | 'REVERT' | 'ATTENDANCE' | 'AI_LABEL' | 'RECALC' | 'WHATSAPP' | 'PAYMENT' | 'SYSTEM';
+export type ActivityKind = 'LOGIN' | 'CONFIG' | 'REQUEST' | 'DECISION' | 'REVERT' | 'ATTENDANCE' | 'AI_LABEL' | 'RECALC' | 'WHATSAPP' | 'PAYMENT' | 'PEOPLE' | 'SYSTEM';
 
 export interface ActivityEntry {
   id: string;

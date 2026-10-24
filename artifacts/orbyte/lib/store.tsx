@@ -7,7 +7,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import * as engine from './engine';
 import { keywordClassify } from './leaveClassifier';
-import { ACCOUNTS } from './seed';
+import { accountsOf } from './seed';
 import type { Account, AttendanceOverride, ISODate, LeaveClassification, LeaveLabel, LeaveType, PayrollConfig } from './types';
 
 const DATA_KEY = 'esalary-guard-data-v1'; // same key as before: older saved data is migrated in place, not lost
@@ -57,6 +57,9 @@ interface Store {
   requestOvertimeCancellation: (id: string) => void;
   decideOvertimeCancellation: (id: string, approve: boolean) => void;
   offerOvertime: (employeeIds: string[], input: OvertimeInput) => void;
+  addEmployee: (input: engine.NewWorker) => void;
+  /** HR → a worker, or (signed in as a worker) the worker → HR. */
+  sendMessage: (employeeId: string, text: string) => void;
   moveOvertime: (id: string, to: OvertimeMove) => void;
   revertOvertime: (id: string) => void;
   payMonth: (month: string) => void;
@@ -244,7 +247,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       save(loaded);
       try {
         const id = sessionStorage.getItem(SESSION_KEY);
-        const found = ACCOUNTS.find((a) => a.id === id) ?? null;
+        const found = accountsOf(loaded.employees).find((a) => a.id === id) ?? null;
         accountRef.current = found;
         setAccount(found);
       } catch {
@@ -293,7 +296,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       serverError,
       clearServerError: () => setServerError(null),
       signIn: async (accountId, password = 'demo') => {
-        const next = ACCOUNTS.find((a) => a.id === accountId)!;
+        const next = accountsOf(dataRef.current!.employees).find((a) => a.id === accountId);
+        if (!next) throw new Error('Unknown account.');
         if (modeRef.current === 'server') {
           await drained();
           await signingOut.current;
@@ -344,6 +348,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       requestOvertimeCancellation: (id) => act('requestOvertimeCancellation', [id], (d) => engine.requestOvertimeCancellation(d, ctx(), id)),
       decideOvertimeCancellation: (id, approve) => act('decideOvertimeCancellation', [id, approve], (d) => engine.decideOvertimeCancellation(d, ctx(), id, approve)),
       offerOvertime: (ids, input) => act('offerOvertime', [ids, input], (d) => engine.offerOvertime(d, ctx(), ids, input)),
+      addEmployee: (input) => act('addEmployee', [input], (d) => engine.addEmployee(d, ctx(), input)),
+      sendMessage: (employeeId, text) => (account?.role === 'HR'
+        ? act('sendMessage', [employeeId, text], (d) => engine.sendMessage(d, ctx(), employeeId, text))
+        : act('replyMessage', [text], (d) => engine.sendMessage(d, ctx(), myEmployeeId(), text, 'WORKER'))),
       moveOvertime: (id, to) => act('moveOvertime', [id, to], (d) => engine.moveOvertime(d, ctx(), id, to)),
       revertOvertime: (id) => act('revertOvertime', [id], (d) => engine.revertOvertime(d, ctx(), id)),
       payMonth: (month) => act('payMonth', [month], (d) => engine.payMonth(d, ctx(), month)),

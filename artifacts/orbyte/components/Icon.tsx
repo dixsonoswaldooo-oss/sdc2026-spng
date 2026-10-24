@@ -13,10 +13,11 @@ const PATHS: Record<string, ReactNode> = {
   file: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6M12 18v-6M9 15h6" /></>,
   clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
   receipt: <><path d="M5 2v20l2.3-1.5L9.7 22 12 20.5l2.3 1.5 2.4-1.5L19 22V2l-2.3 1.5L14.3 2 12 3.5 9.7 2 7.3 3.5z" /><path d="M9 8h6M9 12h6M9 16h4" /></>,
+  users: <><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6.5 6.5 0 0 1 3.5 6" /></>,
   more: <><circle cx="5" cy="12" r="1.4" /><circle cx="12" cy="12" r="1.4" /><circle cx="19" cy="12" r="1.4" /></>,
 };
 
-export type IconName = 'home' | 'sliders' | 'check' | 'calendar' | 'wallet' | 'history' | 'chat' | 'list' | 'file' | 'clock' | 'receipt' | 'more';
+export type IconName = 'home' | 'sliders' | 'check' | 'calendar' | 'wallet' | 'history' | 'chat' | 'list' | 'file' | 'clock' | 'receipt' | 'users' | 'more';
 
 export function Icon({ name }: { name: IconName }) {
   return (

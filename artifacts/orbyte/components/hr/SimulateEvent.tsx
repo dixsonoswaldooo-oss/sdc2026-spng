@@ -84,7 +84,7 @@ export function SimulateEvent() {
             </div>
           )) : <p className="mt-2 text-sm text-muted">No new deduction: that day is covered by approved leave, or already had this deduction.</p>}
           <div className="mt-4 flex flex-wrap gap-3">
-            <Link href="/hr/whatsapp" className="btn btn-ghost !px-4 !py-2">See WhatsApp sent →</Link>
+            <Link href={`/hr/whatsapp?who=${result.employeeId}`} className="btn btn-ghost !px-4 !py-2">Open {name(result.employeeId).split(' ')[0]}&apos;s messages →</Link>
             <button type="button" className="btn btn-ghost !px-4 !py-2" onClick={undo}>Undo</button>
           </div>
         </div>

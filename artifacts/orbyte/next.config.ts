@@ -8,9 +8,12 @@ const root = existsSync(resolve(workspaceRoot, 'pnpm-workspace.yaml')) ? workspa
 
 const nextConfig: NextConfig = {
   // "/" shows the copy of orbyte.my (public/index.html); e-Salary Guard lives at /login, /hr and /employee.
-  // Overtime offers moved into Salary & leave controls; old links and bookmarks land there.
+  // Old links and bookmarks: overtime offers live in Workers & pay; the attendance page was removed.
   async redirects() {
-    return [{ source: '/hr/offers', destination: '/hr/salary#overtime', permanent: false }];
+    return [
+      { source: '/hr/offers', destination: '/hr/salary#overtime', permanent: false },
+      { source: '/hr/attendance', destination: '/hr', permanent: false },
+    ];
   },
   async rewrites() {
     return { beforeFiles: [{ source: '/', destination: '/index.html' }], afterFiles: [], fallback: [] };

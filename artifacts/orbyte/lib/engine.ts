@@ -4,7 +4,7 @@
 import { money, monthName, toSen } from './format';
 import { computePayroll, datesBetween, deductionMessage, workingDays } from './payroll';
 import { LABEL_BY, LEAVE_PAY } from './words';
-import { DEFAULT_LEAVE_DAYS, DEMO_MONTH, DIVISIONS, EMPLOYEES, importAttendance, seedState } from './seed';
+import { accountsOf, DEFAULT_LEAVE_DAYS, DEMO_MONTH, DIVISIONS, EMPLOYEES, importAttendance, seedState } from './seed';
 import type {
   ActivityEntry, ActivityKind, AttendanceOverride, AttendanceRecord, Employee, HrNotification, ISODate, LeaveClassification,
   LeaveLabel, LeaveRequest, LeaveType, Month, Overtime, PaymentLine, PaymentRun, PayrollBreakdown, PayrollConfig, WhatsAppMessage,
@@ -126,7 +126,7 @@ function catchUpToToday(d: Data, ctx: Ctx): void {
   const today = todayOf(ctx.now);
   if (d.today === today) return;
   d.today = today;
-  d.attendance = importAttendance(today);
+  d.attendance = importAttendance(today, d.employees);
 }
 
 /** Applies a change to a copy of the data, then reconciles. */
@@ -235,6 +235,49 @@ export const updateLeaveAllowance = (data: Data, ctx: Ctx, id: string, days: num
     if (e.annualLeaveDays === days) return;
     log(d, ctx, 'CONFIG', 'Changed annual leave allowance', e.name, `${e.annualLeaveDays} → ${days} days (${leaveUsed(d, id)} used)`);
     e.annualLeaveDays = days;
+  });
+
+export type NewWorker = { name: string; position: string; division: string; baseSalary: number; bonus: number };
+const MAX_WORKERS = 40;
+
+/** HR adds a worker: they can sign in at once, and start today (days before that are never counted as absent). */
+export const addEmployee = (data: Data, ctx: Ctx, input: NewWorker) =>
+  change(data, ctx, (d) => {
+    const name = input.name.trim().replace(/\s+/g, ' ');
+    const position = input.position.trim();
+    if (name.length < 2 || name.length > 60) throw new Error('Enter a name of 2 to 60 characters.');
+    if (position.length < 2 || position.length > 60) throw new Error('Enter a position of 2 to 60 characters.');
+    if (!DIVISIONS.includes(input.division)) throw new Error('Pick one of the departments.');
+    if (![input.baseSalary, input.bonus].every((v) => Number.isFinite(v) && v >= 0 && v <= 100_000)) throw new Error('Salary and bonus must be between RM 0 and RM 100,000.');
+    if (d.employees.length >= MAX_WORKERS) throw new Error(`This demo holds up to ${MAX_WORKERS} workers.`);
+    if (d.employees.some((e) => e.name.toLowerCase() === name.toLowerCase())) throw new Error(`${name} is already a worker.`);
+    const n = Math.max(0, ...d.employees.map((e) => Number(e.id.slice(1)) || 0)) + 1;
+    const e: Employee = {
+      id: `E${n}`, name, position, whatsapp: `+60 12-345 ${1000 + n}`, baseSalary: toSen(input.baseSalary), bonus: toSen(input.bonus),
+      division: input.division, annualLeaveDays: DEFAULT_LEAVE_DAYS, startDate: d.today,
+    };
+    d.employees.push(e);
+    d.attendance = importAttendance(d.today, d.employees);
+    const email = accountsOf(d.employees).find((a) => a.employeeId === e.id)!.email;
+    log(d, ctx, 'PEOPLE', 'Added a worker', name, `${position} · ${e.division} · base ${money(e.baseSalary)} · signs in as ${email}`);
+  });
+
+const MESSAGE_MAX = 500;
+function messageText(text: string): string {
+  const clean = text.trim();
+  if (!clean) throw new Error('Write a message first.');
+  if (clean.length > MESSAGE_MAX) throw new Error(`Keep the message under ${MESSAGE_MAX} characters.`);
+  return clean;
+}
+
+/** One conversation per worker: HR writes to them (simulated WhatsApp), they answer HR. */
+export const sendMessage = (data: Data, ctx: Ctx, employeeId: string, text: string, from: 'HR' | 'WORKER' = 'HR') =>
+  change(data, ctx, (d) => {
+    const e = d.employees.find((x) => x.id === employeeId);
+    if (!e) throw new Error('That worker does not exist.');
+    const hr = from === 'HR';
+    d.whatsapp.unshift({ id: nextId(d, 'WA'), employeeId: e.id, to: hr ? e.whatsapp : 'HR', at: ctx.now, kind: hr ? 'HR_MESSAGE' : 'REPLY', text: messageText(text) });
+    log(d, ctx, 'WHATSAPP', hr ? 'Sent a message' : 'Replied to HR', hr ? e.name : 'HR');
   });
 
 const describeDay = (r: AttendanceRecord | undefined) =>

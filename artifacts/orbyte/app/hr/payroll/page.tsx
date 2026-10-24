@@ -1,5 +1,7 @@
 'use client';
-// One-click payroll: review → tick "I have checked" → Pay everyone → confirm. A paid month is locked.
+// One-click payroll for the current month only: review → tick "I have checked" → Pay everyone → confirm. A paid month is
+// locked. Earlier months are in Payment history.
+import Link from 'next/link';
 import { Fragment, useState } from 'react';
 import { Breakdown } from '@/components/Breakdown';
 import { Badge, ErrorNote, Modal, Money, PageHead, Panel, TABLE, TD, TH } from '@/components/ui';
@@ -8,11 +10,9 @@ import { dateTime, money, monthName, toSen } from '@/lib/format';
 import { DEMO_MONTH } from '@/lib/seed';
 import { useStore } from '@/lib/store';
 
-const MONTHS = ['2026-10', '2026-09'];
-
 export default function Payroll() {
   const { data, payMonth } = useStore();
-  const [month, setMonth] = useState(DEMO_MONTH);
+  const month = DEMO_MONTH;
   const [checked, setChecked] = useState(false);
   const [open, setOpen] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
@@ -36,18 +36,11 @@ export default function Payroll() {
   return (
     <>
       <PageHead
-        eyebrow="Payroll"
+        eyebrow="Payroll · this month"
         title={`Payroll · ${monthName(month)}`}
-        action={
-          <label className="flex items-center gap-2 text-sm">
-            <span className="text-muted">Month</span>
-            <select value={month} onChange={(e) => { setMonth(e.target.value); setChecked(false); }} className="rounded-[var(--radius-sm)] border border-line bg-white px-3 py-2">
-              {MONTHS.map((m) => <option key={m} value={m}>{monthName(m)}</option>)}
-            </select>
-          </label>
-        }
+        action={<Link href="/hr/payments" className="btn btn-ghost !px-4 !py-2">Earlier months →</Link>}
       >
-        Check everyone&apos;s pay for the month, then pay everyone at once. Simulated: no money is moved.
+        Check everyone&apos;s pay for this month, then pay everyone at once. Earlier months are in Payment history. Simulated: no money is moved.
       </PageHead>
 
       {run && (

@@ -18,14 +18,14 @@ import type { Role } from '@/lib/types';
 type Item = [string, string, string, IconName, boolean];
 const NAV: Record<Role, Item[]> = {
   HR: [
-    ['/hr', 'Dashboard', 'Home', 'home', true], ['/hr/salary', 'Pay & leave rules', 'Rules', 'sliders', true],
-    ['/hr/approvals', 'Approvals', 'Approvals', 'check', true], ['/hr/attendance', 'Attendance', 'Attendance', 'calendar', false],
-    ['/hr/payroll', 'Payroll', 'Payroll', 'wallet', true], ['/hr/payments', 'Payment history', 'Payments', 'history', false],
-    ['/hr/whatsapp', 'WhatsApp sent', 'WhatsApp', 'chat', false], ['/hr/activity', 'Activity log', 'Activity', 'list', false],
+    ['/hr', 'Dashboard', 'Home', 'home', true], ['/hr/salary', 'Workers & pay', 'Workers', 'users', true],
+    ['/hr/approvals', 'Approvals', 'Approvals', 'check', true], ['/hr/payroll', 'Payroll', 'Payroll', 'wallet', true],
+    ['/hr/payments', 'Payment history', 'Payments', 'history', false], ['/hr/rates', 'Rates', 'Rates', 'sliders', false],
+    ['/hr/whatsapp', 'Messages', 'Messages', 'chat', false], ['/hr/activity', 'Activity log', 'Activity', 'list', false],
   ],
   EMPLOYEE: [
     ['/employee', 'My salary', 'Salary', 'wallet', true], ['/employee/requests', 'Requests', 'Requests', 'file', true],
-    ['/employee/offers', 'Overtime', 'Overtime', 'clock', true], ['/employee/inbox', 'WhatsApp', 'WhatsApp', 'chat', true],
+    ['/employee/offers', 'Overtime', 'Overtime', 'clock', true], ['/employee/inbox', 'Messages', 'Messages', 'chat', true],
     ['/employee/payslips', 'Payslips', 'Payslips', 'receipt', true],
   ],
 };

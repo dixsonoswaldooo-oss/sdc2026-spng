@@ -18,13 +18,21 @@ export const EMPLOYEES: Employee[] = [
   { id: 'E6', name: 'Nurul Izzah', position: 'Admin Assistant', whatsapp: '+60 12-345 1006', baseSalary: 2600, bonus: 150, division: 'Office', annualLeaveDays: DEFAULT_LEAVE_DAYS },
 ];
 
-export const ACCOUNTS: Account[] = [
-  { id: 'HR1', role: 'HR', name: HR_NAME, email: 'farah@kopikawan.my' },
-  ...EMPLOYEES.map((e): Account => ({
-    id: `ACC-${e.id}`, role: 'EMPLOYEE', name: e.name, employeeId: e.id,
-    email: `${e.name.split(' ')[0].toLowerCase()}@kopikawan.my`,
-  })),
-];
+/** The HR account plus one account per worker (workers HR adds get one too). Same first name → ahmad2@, ahmad3@, … */
+export function accountsOf(employees: Employee[]): Account[] {
+  const used = new Map<string, number>();
+  return [
+    { id: 'HR1', role: 'HR', name: HR_NAME, email: 'farah@kopikawan.my' },
+    ...employees.map((e): Account => {
+      const first = e.name.split(' ')[0].toLowerCase().replace(/[^a-z0-9]/g, '') || 'worker';
+      const n = (used.get(first) ?? 0) + 1;
+      used.set(first, n);
+      return { id: `ACC-${e.id}`, role: 'EMPLOYEE', name: e.name, employeeId: e.id, email: `${first}${n > 1 ? n : ''}@kopikawan.my` };
+    }),
+  ];
+}
+
+export const ACCOUNTS: Account[] = accountsOf(EMPLOYEES);
 
 export const DEFAULT_CONFIG: PayrollConfig = {
   overtimeRatePerHour: 18, // about 1.5× the hourly rate of a RM 2,600 monthly salary
@@ -49,10 +57,10 @@ const clock = (minutesAfter8: number) => {
   return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
 };
 
-function attendanceFor(month: Month, before: ISODate): AttendanceRecord[] {
-  return EMPLOYEES.flatMap((e, ei) =>
-    workingDays(month).filter((day) => day < before).map((day, di): AttendanceRecord => {
-      const special = EXCEPTIONS[e.id][day];
+function attendanceFor(month: Month, before: ISODate, employees: Employee[]): AttendanceRecord[] {
+  return employees.flatMap((e, ei) =>
+    workingDays(month).filter((day) => day < before && day >= (e.startDate ?? '')).map((day, di): AttendanceRecord => {
+      const special = EXCEPTIONS[e.id]?.[day]; // workers added by HR clock in on time
       if (special === null) return { employeeId: e.id, date: day, lateMinutes: 0 };
       const minutes = special ?? -(5 + ((ei * 7 + di * 3) % 12)); // on time: 07:44–07:55
       return { employeeId: e.id, date: day, clockIn: clock(minutes), clockOut: clock(9 * 60 + ((ei + di) % 9)), lateMinutes: Math.max(0, minutes) };
@@ -61,8 +69,8 @@ function attendanceFor(month: Month, before: ISODate): AttendanceRecord[] {
 }
 
 /** The "imported" attendance: every working day of September and October 2026 that has already happened (before `today`). */
-export function importAttendance(today: ISODate): AttendanceRecord[] {
-  return [...attendanceFor('2026-09', today), ...attendanceFor(DEMO_MONTH, today)];
+export function importAttendance(today: ISODate, employees: Employee[] = EMPLOYEES): AttendanceRecord[] {
+  return [...attendanceFor('2026-09', today, employees), ...attendanceFor(DEMO_MONTH, today, employees)];
 }
 
 export function seedState(today: ISODate) {

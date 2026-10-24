@@ -1,60 +1,51 @@
 'use client';
-// Pay & leave rules, one tab at a time: global rules, overtime per division, pay per employee (live preview), leave allowance.
-// The tab follows the address hash, so /hr/salary#overtime (and the /hr/offers redirect) opens Overtime.
-import { useEffect, useState } from 'react';
+// Workers & pay, one tab at a time: workers (search, grouped by department, pay with live preview, add a worker),
+// overtime offers, leave allowance. The tab follows the address hash, so /hr/salary#overtime (and /hr/offers) opens Overtime.
+// The rates themselves are on /hr/rates.
+import { useEffect, useState, type FormEvent } from 'react';
 import { LeaveAllowance } from '@/components/controls/LeaveAllowance';
 import { OvertimeControls } from '@/components/controls/OvertimeControls';
-import { Badge, Cell, Money, Notice, PageHead, Panel, TABLE, TD, TH } from '@/components/ui';
-import { attendanceOf, isPaid, payrollFor } from '@/lib/engine';
+import { Badge, Empty, Money, Notice, PageHead, Panel, TABLE, TD, TH } from '@/components/ui';
+import { attendanceOf, isPaid, overtimeRate, payrollFor } from '@/lib/engine';
 import { monthName } from '@/lib/format';
 import { computePayroll } from '@/lib/payroll';
-import { DEMO_MONTH } from '@/lib/seed';
+import { accountsOf, DEMO_MONTH, DIVISIONS } from '@/lib/seed';
 import { useStore } from '@/lib/store';
-import type { PayrollConfig } from '@/lib/types';
+import type { Employee } from '@/lib/types';
 
-const FIELDS: [keyof PayrollConfig, string, string, number][] = [
-  ['overtimeRatePerHour', 'Overtime rate', 'RM per hour · default for every division', 0.5],
-  ['lateToleranceMinutes', 'Late tolerance', 'minutes', 1],
-  ['lateRatePerMinute', 'Late deduction rate', 'RM per minute beyond tolerance', 0.05],
-  ['absentDeductionPct', 'Absence deduction', '% of daily wage per day', 5],
-  ['leaveDeductionPct', 'Unpaid leave deduction', '% of daily wage per day', 5],
-];
-
-const TABS = [['rules', 'Rules'], ['overtime', 'Overtime'], ['pay', 'Pay'], ['leave-allowance', 'Leave allowance']] as const;
+const TABS = [['workers', 'Workers'], ['overtime', 'Overtime'], ['leave-allowance', 'Leave allowance']] as const;
 type Tab = (typeof TABS)[number][0];
-const tabOf = (hash: string): Tab => TABS.find(([id]) => `#${id}` === hash)?.[0] ?? 'rules';
+const tabOf = (hash: string): Tab => TABS.find(([id]) => `#${id}` === hash)?.[0] ?? 'workers';
+const BLANK = { name: '', position: '', division: DIVISIONS[0], baseSalary: 2500, bonus: 0 };
 
 export default function SalaryControls() {
-  const [tab, setTab] = useState<Tab>('rules');
+  const { data, updateEmployeePay, addEmployee } = useStore();
+  const [tab, setTab] = useState<Tab>('workers');
+  const [query, setQuery] = useState('');
+  const [pay, setPay] = useState<Record<string, { base: number; bonus: number }>>({});
+  const [adding, setAdding] = useState(false);
+  const [worker, setWorker] = useState(BLANK);
+  const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState<string | null>(null);
+  const [addedName, setAddedName] = useState<string | null>(null);
   useEffect(() => {
     const follow = () => setTab(tabOf(location.hash));
     follow();
     addEventListener('hashchange', follow);
     return () => removeEventListener('hashchange', follow);
   }, []);
+
   const open = (id: Tab) => {
     setTab(id);
     setSaved(null);
     history.replaceState(null, '', `#${id}`);
   };
-  const { data, updateConfig, updateEmployeePay } = useStore();
-  const [config, setConfig] = useState(data.config);
-  const [pay, setPay] = useState(() => Object.fromEntries(data.employees.map((e) => [e.id, { base: e.baseSalary, bonus: e.bonus }])));
-  const [error, setError] = useState<string | null>(null);
-  const [saved, setSaved] = useState<string | null>(null);
-  const locked = isPaid(data, DEMO_MONTH);
-  const configChanged = FIELDS.some(([k]) => config[k] !== data.config[k]);
-
-  const preview = (id: string) => {
-    const e = data.employees.find((x) => x.id === id)!;
-    return computePayroll({
-      employee: { ...e, baseSalary: pay[id].base, bonus: pay[id].bonus }, month: DEMO_MONTH, today: data.today,
-      config: { ...config, overtimeRatePerHour: data.divisionOvertime[e.division] ?? config.overtimeRatePerHour },
-      attendance: attendanceOf(data, id), leaves: data.leaves.filter((l) => l.employeeId === id),
-      overtime: data.overtime.filter((o) => o.employeeId === id),
-    });
-  };
-  const feedback = <Notice error={error} success={saved} />;
+  const payOf = (e: Employee) => pay[e.id] ?? { base: e.baseSalary, bonus: e.bonus };
+  const preview = (e: Employee) => computePayroll({
+    employee: { ...e, baseSalary: payOf(e).base, bonus: payOf(e).bonus }, month: DEMO_MONTH, today: data.today,
+    config: { ...data.config, overtimeRatePerHour: overtimeRate(data, e) },
+    attendance: attendanceOf(data, e.id), leaves: data.leaves.filter((l) => l.employeeId === e.id), overtime: data.overtime.filter((o) => o.employeeId === e.id),
+  });
   const act = (fn: () => void, message: string) => {
     setError(null);
     try {
@@ -64,82 +55,121 @@ export default function SalaryControls() {
       setError((e as Error).message);
     }
   };
+  const add = (event: FormEvent) => {
+    event.preventDefault();
+    setError(null);
+    try {
+      addEmployee(worker);
+      setAddedName(worker.name.trim().replace(/s+/g, ' '));
+      setWorker(BLANK);
+      setAdding(false);
+    } catch (e) {
+      setError((e as Error).message); // the form stays filled so HR can fix it
+    }
+  };
+  const added = data.employees.find((e) => e.name === addedName); // names are unique (engine.addEmployee)
+
+  const needle = query.trim().toLowerCase();
+  const found = data.employees.filter((e) => !needle || e.name.toLowerCase().includes(needle));
+  const groups = DIVISIONS.map((d) => [d, found.filter((e) => e.division === d)] as const).filter(([, people]) => people.length);
 
   return (
     <>
-      <PageHead eyebrow="Pay & leave rules" title="Pay, overtime and leave rules">
-        Set how pay, overtime and leave are worked out. Saving recalculates everyone and tells them by WhatsApp if a cut changes.
+      <PageHead eyebrow="Workers & pay" title="Workers, pay and overtime">
+        Find a worker, change their pay, add a new worker, offer overtime and set leave allowances. Rates are on the Rates page.
       </PageHead>
-      {locked && <p className="mb-6 rounded-[var(--radius-sm)] bg-gray px-4 py-3 text-sm"><Badge tone="success">{monthName(DEMO_MONTH)} is paid</Badge> <span className="ml-2 text-muted">Its amounts are frozen; changes here apply to the next payroll.</span></p>}
+      {isPaid(data, DEMO_MONTH) && <p className="mb-6 rounded-[var(--radius-sm)] bg-gray px-4 py-3 text-sm"><Badge tone="success">{monthName(DEMO_MONTH)} is paid</Badge> <span className="ml-2 text-muted">Its amounts are frozen; changes here apply to the next payroll.</span></p>}
 
-      <div role="tablist" aria-label="Rules sections" className="flex flex-wrap gap-2">
+      <div role="tablist" aria-label="Sections" className="flex flex-wrap gap-2">
         {TABS.map(([id, label]) => (
           <button key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => open(id)} className={`btn shrink-0 !px-4 !py-2 ${tab === id ? 'btn-primary' : 'btn-ghost'}`}>{label}</button>
         ))}
       </div>
 
-      {tab === 'rules' && <>
-      <Panel className="mt-6">
-        <h2>Global rules</h2>
-        <div className="mt-5 grid grid-cols-2 gap-x-3 sm:gap-x-6 lg:grid-cols-5">
-          {FIELDS.map(([key, label, unit, step]) => (
-            <div key={key} className="field">
-              <label htmlFor={key}>{label}</label>
-              <input id={key} type="number" min={0} step={step} value={config[key]} onChange={(e) => setConfig({ ...config, [key]: Number(e.target.value) })} className="tabular" />
-              <span className="mt-1 block text-xs text-muted">{unit}</span>
+      {tab === 'workers' && (
+        <Panel className="mt-6">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div className="field !mb-0 w-full sm:w-80">
+              <label htmlFor="search">Search by name</label>
+              <input id="search" type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="e.g. Ravi" autoComplete="off" />
+            </div>
+            <button type="button" className={`btn ${adding ? 'btn-ghost' : 'btn-primary'}`} aria-expanded={adding} onClick={() => { setAdding(!adding); setSaved(null); setError(null); setAddedName(null); }}>
+              {adding ? 'Close' : '+ Add a worker'}
+            </button>
+          </div>
+
+          {adding && (
+            <form onSubmit={add} className="mt-5 rounded-[var(--radius)] bg-gray p-5" aria-label="Add a worker">
+              <h2 className="text-[1.15rem]">Add a worker</h2>
+              <p className="mt-1 text-sm text-muted">They get a sign-in at once (password <code>demo</code>) and start today, so earlier days are never counted as absent.</p>
+              <div className="mt-4 grid grid-cols-2 gap-x-3 sm:gap-x-6 lg:grid-cols-5">
+                <div className="field col-span-2 lg:col-span-1"><label htmlFor="w-name">Full name</label><input id="w-name" value={worker.name} onChange={(e) => setWorker({ ...worker, name: e.target.value })} required minLength={2} maxLength={60} /></div>
+                <div className="field col-span-2 lg:col-span-1"><label htmlFor="w-position">Position</label><input id="w-position" value={worker.position} onChange={(e) => setWorker({ ...worker, position: e.target.value })} required minLength={2} maxLength={60} /></div>
+                <div className="field col-span-2 lg:col-span-1">
+                  <label htmlFor="w-division">Department</label>
+                  <select id="w-division" value={worker.division} onChange={(e) => setWorker({ ...worker, division: e.target.value })}>
+                    {DIVISIONS.map((d) => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                </div>
+                <div className="field"><label htmlFor="w-base">Base salary (RM)</label><input id="w-base" type="number" min={0} max={100000} step={50} value={worker.baseSalary} onChange={(e) => setWorker({ ...worker, baseSalary: Number(e.target.value) })} required className="tabular" /></div>
+                <div className="field"><label htmlFor="w-bonus">Bonus (RM)</label><input id="w-bonus" type="number" min={0} max={100000} step={50} value={worker.bonus} onChange={(e) => setWorker({ ...worker, bonus: Number(e.target.value) })} required className="tabular" /></div>
+              </div>
+              <button type="submit" className="btn btn-primary">Add worker</button>
+              <Notice error={error} />
+            </form>
+          )}
+          {added && (
+            <p role="status" className="mt-4 rounded-[var(--radius-sm)] bg-success/10 px-4 py-3 text-sm font-medium text-success">
+              {added.name} added to {added.division}. They sign in as {accountsOf(data.employees).find((a) => a.employeeId === added.id)?.email} (password demo).
+            </p>
+          )}
+          {!adding && <Notice error={error} success={saved} />}
+
+          {groups.length === 0 ? (
+            <div className="mt-6">
+              <Empty>No worker matches &ldquo;{query}&rdquo;. Check the spelling, or <button type="button" className="font-medium text-royal underline" onClick={() => setQuery('')}>show everyone</button>.</Empty>
+            </div>
+          ) : groups.map(([division, people]) => (
+            <div key={division} role="group" aria-labelledby={`dept-${division}`} className="mt-8">
+              <h2 id={`dept-${division}`} className="flex items-center gap-2 text-[1.15rem]">{division} <span className="text-sm font-normal text-muted">({people.length})</span></h2>
+              <div className="mt-3 overflow-x-auto">
+                <table className={TABLE}>
+                  <thead><tr>{['Worker', 'Base salary (RM)', 'Bonus (RM)', 'Take-home now', 'After saving', ''].map((h) => <th key={h} className={TH}>{h}</th>)}</tr></thead>
+                  <tbody>
+                    {people.map((e) => {
+                      const current = payrollFor(data, e.id, DEMO_MONTH).netPay;
+                      const next = preview(e).netPay;
+                      const value = payOf(e);
+                      const dirty = value.base !== e.baseSalary || value.bonus !== e.bonus;
+                      return (
+                        <tr key={e.id}>
+                          <td className={TD}><span className="font-semibold">{e.name}</span><span className="block text-xs text-muted">{e.position}{e.startDate && ` · joined ${e.startDate.slice(8, 10)}/${e.startDate.slice(5, 7)}`}</span></td>
+                          {(['base', 'bonus'] as const).map((f) => (
+                            <td key={f} className={TD}>
+                              <input
+                                aria-label={`${f === 'base' ? 'Base salary' : 'Bonus'} for ${e.name}`}
+                                type="number" min={0} step={50} value={value[f]}
+                                onChange={(ev) => setPay({ ...pay, [e.id]: { ...value, [f]: Number(ev.target.value) } })}
+                                className="tabular w-28 rounded-[var(--radius-sm)] border border-line px-3 py-2"
+                              />
+                            </td>
+                          ))}
+                          <td className={TD}><Money amount={current} /></td>
+                          <td className={`${TD} font-semibold ${next > current ? 'text-success' : next < current ? 'text-danger' : ''}`}><Money amount={next} /></td>
+                          <td className={TD}>
+                            <button type="button" className="btn btn-ghost !px-4 !py-2" disabled={!dirty} onClick={() => act(() => updateEmployeePay(e.id, value.base, value.bonus), `${e.name}'s pay saved.`)}>Save</button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           ))}
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <button type="button" className="btn btn-primary" disabled={!configChanged} onClick={() => act(() => updateConfig(config), 'Rules saved. Pay recalculated.')}>Save rules</button>
-          {configChanged && <button type="button" className="btn btn-ghost" onClick={() => setConfig(data.config)}>Undo</button>}
-          {configChanged && <span className="text-sm text-warn">Not saved yet. The preview under Pay already uses these rules.</span>}
-        </div>
-        {feedback}
-      </Panel>
-      <Cell className="mt-8"><p className="text-sm">Take-home pay = base + bonus + completed overtime − late, absence and unpaid-leave deductions. No tax, EPF, SOCSO or EIS in this demo.</p></Cell>
-      </>}
-
-      {tab === 'overtime' && <OvertimeControls />}
-
-      {tab === 'pay' && (
-      <Panel className="mt-6">
-        <h2>Pay per employee</h2>
-        {feedback}
-        <div className="mt-4 overflow-x-auto">
-          <table className={TABLE}>
-            <thead><tr>{['Employee', 'Base salary (RM)', 'Bonus (RM)', 'Now', 'Preview', ''].map((h) => <th key={h} className={TH}>{h}</th>)}</tr></thead>
-            <tbody>
-              {data.employees.map((e) => {
-                const current = payrollFor(data, e.id, DEMO_MONTH).netPay;
-                const next = preview(e.id).netPay;
-                const dirty = pay[e.id].base !== e.baseSalary || pay[e.id].bonus !== e.bonus;
-                return (
-                  <tr key={e.id}>
-                    <td className={TD}><span className="font-semibold">{e.name}</span><span className="block text-xs text-muted">{e.position}</span></td>
-                    {(['base', 'bonus'] as const).map((f) => (
-                      <td key={f} className={TD}>
-                        <input
-                          aria-label={`${f === 'base' ? 'Base salary' : 'Bonus'} for ${e.name}`}
-                          type="number" min={0} step={50} value={pay[e.id][f]}
-                          onChange={(ev) => setPay({ ...pay, [e.id]: { ...pay[e.id], [f]: Number(ev.target.value) } })}
-                          className="tabular w-28 rounded-[var(--radius-sm)] border border-line px-3 py-2"
-                        />
-                      </td>
-                    ))}
-                    <td className={TD}><Money amount={current} /></td>
-                    <td className={`${TD} font-semibold ${next > current ? 'text-success' : next < current ? 'text-danger' : ''}`}><Money amount={next} /></td>
-                    <td className={TD}>
-                      <button type="button" className="btn btn-ghost !px-4 !py-2" disabled={!dirty} onClick={() => act(() => updateEmployeePay(e.id, pay[e.id].base, pay[e.id].bonus), `${e.name}'s pay saved.`)}>Save</button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </Panel>
+        </Panel>
       )}
+      {tab === 'overtime' && <OvertimeControls />}
       {tab === 'leave-allowance' && <LeaveAllowance />}
     </>
   );

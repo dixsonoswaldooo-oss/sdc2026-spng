@@ -295,3 +295,19 @@ laptop and an employee on a phone see the same requests and decisions within a f
   and a History panel below.
 - Secondary buttons look like buttons; success and error messages use one component (`Notice`) right under the action;
   empty lists say what to do next. On phones the "Pay everyone" bar stays visible while scrolling the payroll.
+
+## HR side reorganised: workers, rates, messages (24 Oct 2026)
+
+- **Attendance page removed** from HR (menu and page). Pay still uses the imported attendance, so late/absent cuts and
+  "Try it live" work as before. Old links to `/hr/attendance` go to the dashboard.
+- **Messages** replaces "WhatsApp sent": HR picks one worker and sees one conversation (automatic pay-cut alerts, overtime
+  offers, HR's messages, the worker's replies) and can write to them. The worker answers from their own Messages page.
+- **Workers & pay** (`/hr/salary`): search by name, workers grouped by department, pay with a live preview, and
+  **+ Add a worker** (name, position, department, salary, bonus). A new worker can sign in at once (first name @kopikawan.my,
+  password demo) and starts today, so earlier days never count as absent.
+- **Rates** (`/hr/rates`): all amounts in one place — overtime rate, late tolerance and rate, absence and unpaid-leave
+  deductions, and overtime per department.
+- **Overtime offers**: "Select all workers" (or all in one department).
+- **Payroll** shows only the current month; **Payment history** has a month picker (any month of the year, one at a time).
+- **Activity log**: plain sentences ("who · what · whom"), four filters, details on demand, 50 at a time.
+- Checks: 66 automatic tests; browser tests in both modes: new HR features 17, demo 22, revision 21, two devices 9, slow AI 4.

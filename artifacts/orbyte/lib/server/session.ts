@@ -2,26 +2,25 @@
 // Key: SESSION_SECRET if set, else derived from DATABASE_URL (secret too, and the same on every Replit server).
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 import { cookies } from 'next/headers';
-import { ACCOUNTS } from '../seed';
 import type { Account } from '../types';
 
 const COOKIE = 'esg-session';
 const key = () => process.env.SESSION_SECRET || createHash('sha256').update(`esalary-session|${process.env.DATABASE_URL ?? ''}`).digest('hex');
 const sign = (id: string) => createHmac('sha256', key()).update(id).digest('base64url');
 
-/** "ACC-E1.<signature>" → the account, or null if missing or tampered with. */
-export function accountFromToken(token: string | undefined): Account | null {
+/** "ACC-E1.<signature>" → the account (from `accounts`, the space's current list), or null if missing or tampered with. */
+export function accountFromToken(token: string | undefined, accounts: Account[]): Account | null {
   if (!token) return null;
   const dot = token.lastIndexOf('.');
   const id = token.slice(0, dot);
   const given = Buffer.from(token.slice(dot + 1));
   const expected = Buffer.from(sign(id));
   if (dot < 1 || given.length !== expected.length || !timingSafeEqual(given, expected)) return null;
-  return ACCOUNTS.find((a) => a.id === id) ?? null;
+  return accounts.find((a) => a.id === id) ?? null;
 }
 
-export async function currentAccount(): Promise<Account | null> {
-  return accountFromToken((await cookies()).get(COOKIE)?.value);
+export async function currentAccount(accounts: Account[]): Promise<Account | null> {
+  return accountFromToken((await cookies()).get(COOKIE)?.value, accounts);
 }
 
 export async function startSession(account: Account): Promise<void> {

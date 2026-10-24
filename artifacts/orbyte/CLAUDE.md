@@ -83,8 +83,13 @@ the table with `npx drizzle-kit push --dialect postgresql --schema ./src/schema/
   it must call `assertOpen` (paid month = locked) and `log`. UI shows why an action is disabled with `paidReason` /
   `leaveCancelBlock` / `overtimeCancelBlock` and `GuardedButton`.
 - Saved browser data has a `version`; `engine.migrate` upgrades older data in place. Bump `DATA_VERSION` and extend `migrate` when the shape changes.
-- HR pages: `/hr/salary` (tabs: rules, overtime per division, pay, leave allowance; the tab follows the address hash), `/hr/approvals`, `/hr/attendance`.
-  `/hr/offers` redirects to `/hr/salary#overtime` (`next.config.ts`).
+- HR pages: `/hr/salary` "Workers & pay" (tabs: workers = search, departments, pay, add a worker; overtime offers; leave
+  allowance; the tab follows the address hash), `/hr/rates` (all rates + overtime per department), `/hr/approvals`, `/hr/payroll`
+  (current month only), `/hr/payments` (month picker), `/hr/whatsapp` "Messages" (one two-way conversation per worker, `?who=E3`),
+  `/hr/activity`. `/hr/offers` → `/hr/salary#overtime`, `/hr/attendance` (removed) → `/hr` (`next.config.ts`).
+- Accounts come from the data: `seed.accountsOf(data.employees)` (HR + every worker, also workers HR adds with
+  `engine.addEmployee`; they start on `startDate` and are never absent before it). The server resolves the session cookie
+  against the current space's accounts, so never use the static `ACCOUNTS` list outside tests.
 
 ## 5. Rules for AI content
 

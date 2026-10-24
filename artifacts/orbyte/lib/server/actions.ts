@@ -34,6 +34,11 @@ const CONFIG_KEYS: (keyof PayrollConfig)[] = ['overtimeRatePerHour', 'lateTolera
 const config = (v: unknown): v is PayrollConfig => !!v && CONFIG_KEYS.every((k) => num((v as Record<string, unknown>)[k]));
 const attendanceValue = (v: unknown): v is { status: AttendanceOverride['status']; lateMinutes: number } | null =>
   v === null || (!!v && ['PRESENT', 'ABSENT', 'IZIN'].includes((v as Record<string, unknown>).status as string) && num((v as Record<string, unknown>).lateMinutes));
+const DEPARTMENT_FIELDS = ['name', 'position', 'division'] as const;
+const newWorker = (v: unknown): v is engine.NewWorker => {
+  const x = v as Record<string, unknown>;
+  return !!x && DEPARTMENT_FIELDS.every((k) => str(x[k])) && num(x.baseSalary) && num(x.bonus);
+};
 const OT_MOVES = ['APPROVED', 'REJECTED', 'ACCEPTED', 'DECLINED', 'COMPLETED'] as const;
 type OtMove = (typeof OT_MOVES)[number];
 
@@ -58,6 +63,8 @@ export const ACTIONS: Record<string, Rule> = {
   revertOvertime: { who: 'HR', valid: ([id]) => str(id), run: (d, c, [id]) => engine.revertOvertime(d, c, id as string) },
   decideOvertimeCancellation: { who: 'HR', valid: ([id, ok]) => str(id) && bool(ok), run: (d, c, [id, ok]) => engine.decideOvertimeCancellation(d, c, id as string, ok as boolean) },
   payMonth: { who: 'HR', valid: ([m]) => typeof m === 'string' && /^\d{4}-\d{2}$/.test(m), run: (d, c, [m]) => engine.payMonth(d, c, m as string) },
+  addEmployee: { who: 'HR', valid: ([input]) => newWorker(input), run: (d, c, [input]) => engine.addEmployee(d, c, input as engine.NewWorker) },
+  sendMessage: { who: 'HR', valid: ([id, text]) => str(id) && str(text), run: (d, c, [id, text]) => engine.sendMessage(d, c, id as string, text as string) },
   markNotificationsRead: { who: 'HR', valid: () => true, run: (d) => engine.markNotificationsRead(d) },
   resetDemo: { who: 'HR', valid: () => true, run: (_d, c) => engine.freshData(c) },
   simulateEvent: {
@@ -82,6 +89,7 @@ export const ACTIONS: Record<string, Rule> = {
   },
   withdrawLeave: { who: 'EMPLOYEE', owned: 'leave', valid: ([id]) => str(id), run: (d, c, [id]) => engine.withdrawLeave(d, c, id as string) },
   requestLeaveCancellation: { who: 'EMPLOYEE', owned: 'leave', valid: ([id]) => str(id), run: (d, c, [id]) => engine.requestLeaveCancellation(d, c, id as string) },
+  replyMessage: { who: 'EMPLOYEE', valid: ([text]) => str(text), run: (d, c, [text], me) => engine.sendMessage(d, c, me, text as string, 'WORKER') },
   requestOvertime: { who: 'EMPLOYEE', valid: ([input]) => otInput(input), run: (d, c, [input], me) => engine.requestOvertime(d, c, me, input as { date: string; hours: number; note: string }) },
   editOvertime: { who: 'EMPLOYEE', owned: 'overtime', valid: ([id, input]) => str(id) && otInput(input), run: (d, c, [id, input]) => engine.editOvertime(d, c, id as string, input as { date: string; hours: number; note: string }) },
   withdrawOvertime: { who: 'EMPLOYEE', owned: 'overtime', valid: ([id]) => str(id), run: (d, c, [id]) => engine.withdrawOvertime(d, c, id as string) },

@@ -68,6 +68,7 @@ export function computePayroll({ employee, month, config, attendance, leaves, ov
       continue;
     }
     if (today && day >= today) continue;
+    if (employee.startDate && day < employee.startDate) continue; // before they joined
     const record = byDate.get(day);
     if (record?.izin) continue;
     if (!record?.clockIn) {

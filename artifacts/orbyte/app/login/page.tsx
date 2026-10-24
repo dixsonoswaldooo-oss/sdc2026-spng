@@ -4,13 +4,14 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
 import { DemoSpace } from '@/components/DemoSpace';
 import { Reveal } from '@/components/Reveal';
-import { ACCOUNTS, COMPANY, EMPLOYEES } from '@/lib/seed';
+import { accountsOf, COMPANY } from '@/lib/seed';
 import { useStore } from '@/lib/store';
 
 const GUIDE_KEY = 'esg-guide';
 
 export default function LoginPage() {
-  const { account, signIn } = useStore();
+  const { account, signIn, data } = useStore();
+  const ACCOUNTS = accountsOf(data.employees); // includes workers HR added
   const router = useRouter();
   const [email, setEmail] = useState(ACCOUNTS[0].email);
   const [password, setPassword] = useState('demo');
@@ -100,7 +101,7 @@ export default function LoginPage() {
             <p className="text-xs font-semibold text-muted">Demo accounts · password <code>demo</code> · one click to sign in</p>
             <ul className="mt-3 grid gap-2 sm:grid-cols-2">
               {ACCOUNTS.map((a) => {
-                const emp = EMPLOYEES.find((e) => e.id === a.employeeId);
+                const emp = data.employees.find((e) => e.id === a.employeeId);
                 return (
                   <li key={a.id}>
                     <button

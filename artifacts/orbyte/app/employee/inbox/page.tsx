@@ -1,16 +1,16 @@
 'use client';
-import { PageHead } from '@/components/ui';
-import { WhatsAppList } from '@/components/WhatsAppList';
+import { Conversation } from '@/components/Conversation';
+import { PageHead, Panel } from '@/components/ui';
 import { useMe } from '@/lib/useMe';
 
 export default function Inbox() {
-  const { data, me } = useMe();
+  const { me } = useMe();
   return (
     <>
-      <PageHead eyebrow="WhatsApp" title="Messages to you">
-        Every cut from your pay is explained here the moment it happens, not on payday. In a real company this arrives on WhatsApp.
+      <PageHead eyebrow="Messages" title="Messages with HR">
+        Every cut from your pay is explained here the moment it happens, not on payday. You can also answer HR here. In a real company this is WhatsApp.
       </PageHead>
-      <WhatsAppList messages={data.whatsapp.filter((m) => m.employeeId === me.id)} employees={data.employees} showRecipient={false} />
+      <Panel><Conversation employeeId={me.id} viewer="WORKER" /></Panel>
     </>
   );
 }

@@ -6,6 +6,7 @@
 //   POST { action: "readReason", args: [leaveId] } → the AI reads a pending reason (inside this request) and labels it.
 import * as engine from '@/lib/engine';
 import { performAll, Refused, type Step } from '@/lib/server/actions';
+import { accountsOf } from '@/lib/seed';
 import { classifyReason } from '@/lib/server/classify';
 import { currentAccount } from '@/lib/server/session';
 import { currentSpace } from '@/lib/server/space';
@@ -26,8 +27,8 @@ export async function GET(request: Request): Promise<Response> {
 export async function POST(request: Request): Promise<Response> {
   if (!hasDatabase()) return browserMode();
   const body = (await request.json().catch(() => null)) as { action?: unknown; args?: unknown; actions?: unknown } | null;
-  const account = await currentAccount();
   const state = stateOf(await currentSpace());
+  const account = await currentAccount(accountsOf((await state.load(ctx())).data.employees));
   try {
     if (body?.action === 'readReason') {
       const [id] = Array.isArray(body.args) ? body.args : [];
