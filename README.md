@@ -20,7 +20,6 @@
 | Resource          | Link                                           |
 | ----------------- | ---------------------------------------------- |
 | GitHub Repository | https://github.com/dixsonoswaldooo-oss/sdc2026-spng |
-| Replit Project    | https://replit.com/@your-username/your-project |
 | Live Demo         | https://sdc-2026-spng.replit.app/              |
 | RunPod Endpoint   | https://api.runpod.ai/v2/your-endpoint-id      |
 | Slide Deck        | https://example.com/slides                     |
