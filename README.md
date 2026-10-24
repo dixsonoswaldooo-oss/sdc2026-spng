@@ -64,34 +64,85 @@ e-Salary Guard is an AI-powered payroll management system that automatically cal
 ## Project Structure
 
 ```
-.
-├── docs/                    # Screenshots, diagrams
-├── runpod/
-│   └── handler.py           # RunPod serverless handler (GPU workload)
-├── src/
-│   ├── main.py              # Application entry point
-│   └── utils.py             # Helper functions
-├── submission/              # Required submission documents
-│   ├── SDC2026_TeamName_Preliminary.pdf      # Preliminary submission
-│   ├── SDC2026_TeamName_TechDeclaration.pdf  # Technology declaration
-│   ├── SDC2026_TeamName_Replit_POU.pdf       # Replit proof of use
-│   └── SDC2026_TeamName_Runpod_POU.pdf       # RunPod proof of use
-├── tests/
-│   └── test_utils.py        # Unit tests
-├── .env.example             # Example environment variables
-├── .gitignore
-├── .replit                  # Replit run configuration
-├── LICENSE
-├── requirements.txt         # Python dependencies
+e-salary-guard/
+├── app/                                # Halaman dan navigasi aplikasi
+│   ├── employee/
+│   │   ├── dashboard/                  # Perkiraan gaji dan notifikasi
+│   │   ├── leave-applications/         # Ajukan, ubah, atau tarik cuti
+│   │   ├── overtime-requests/          # Ajukan lembur dan lihat status
+│   │   └── payslips/                   # Slip dan riwayat pembayaran
+│   ├── hr/
+│   │   ├── dashboard/                  # Ringkasan pengajuan dan payroll
+│   │   ├── salary-rules/               # Aturan gaji dan potongan
+│   │   ├── attendance/                 # Tinjau dan koreksi absensi
+│   │   ├── leave-approvals/            # Tinjau dan putuskan pengajuan cuti
+│   │   ├── overtime-approvals/         # Tinjau dan putuskan pengajuan lembur
+│   │   ├── deductions/                 # Pantau potongan karyawan
+│   │   ├── payroll/                    # Tinjau dan proses draft payroll
+│   │   └── activity-history/           # Riwayat tindakan dan perubahan
+│   └── api/                            # Endpoint aplikasi
+├── components/                         # Komponen UI yang digunakan bersama
+├── services/
+│   ├── attendance-service              # Membaca absensi dan menyimpan koreksi
+│   ├── leave-service                   # Mengelola pengajuan dan keputusan cuti
+│   ├── overtime-service                # Mengelola pengajuan dan lembur selesai
+│   ├── salary-rules-service            # Mengelola aturan gaji dan tarif
+│   ├── deduction-service               # Menghitung dan menjelaskan potongan
+│   ├── payroll-service                 # Menghitung draft gaji dan membuat slip
+│   ├── notification-service            # Mengirim notifikasi dalam akun
+│   └── activity-log-service            # Mencatat tindakan untuk audit
+├── integrations/
+│   ├── directory/                      # Data karyawan dan akun
+│   ├── attendance/                     # Data absensi
+│   ├── eleave/                         # Data cuti dan jatah cuti
+│   ├── eot/                            # Data lembur
+│   └── payroll-connect/                # Pengiriman hasil ke sistem payroll
+├── ai/
+│   └── leave-reason-advisor/            # Saran AI untuk alasan cuti
+├── database/
+│   ├── schema/                          # Struktur data
+│   └── migrations/                      # Perubahan database
+├── tests/                               # Pengujian aplikasi
+├── .env.example                         # Contoh konfigurasi
+├── package.json
 └── README.md
 ```
 
 ### Architecture
 
 ```
-User ──► Replit (App / API) ──► RunPod Endpoint (GPU model)
-                │
-                └──► Response returned to user
+Employee
+  ├── Mengajukan, mengubah, atau menarik cuti
+  ├── Mengajukan lembur
+  └── Melihat notifikasi, perkiraan gaji, dan slip
+          │
+          ▼
+Application
+  ├── Leave Service ── AI memberi saran atas alasan cuti
+  ├── Overtime Service
+  ├── Attendance Service
+  ├── Salary Rules Service
+  └── Payroll Service
+          │
+          ▼
+HR Dashboard
+  ├── Mengatur aturan gaji, potongan, dan tarif lembur
+  ├── Mengoreksi absensi dengan catatan perubahan
+  ├── Menyetujui atau menolak cuti dan lembur
+  ├── Melihat karyawan yang terkena potongan
+  └── Meninjau draft payroll dan mencatat pembayaran
+          │
+          ▼
+Database
+  ├── Data karyawan, aturan gaji, dan pengajuan
+  ├── Absensi asli dan koreksi yang tersimpan terpisah
+  ├── Keputusan HR dan hasil perhitungan gaji
+  ├── Notifikasi, slip, dan nomor referensi pembayaran
+  └── Activity history
+          │
+          ▼
+Payroll System / Bank
+  └── Menangani transfer dan perhitungan EPF, SOCSO, EIS, serta PCB
 ```
 
 ---
