@@ -20,7 +20,7 @@ export function PageHead({ eyebrow, title, children, action }: { eyebrow: string
 /** Orbyte's gray cell card. */
 export function Cell({ children, className = '', delay = 0 }: { children: ReactNode; className?: string; delay?: number }) {
   return (
-    <Reveal delay={delay} className={`cell !p-6 ${className}`}>
+    <Reveal delay={delay} className={`cell !p-4 sm:!p-6 ${className}`}>
       {children}
     </Reveal>
   );
@@ -28,14 +28,14 @@ export function Cell({ children, className = '', delay = 0 }: { children: ReactN
 
 /** White panel with Orbyte's soft "stamp panel" shadow. */
 export function Panel({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return <Reveal className={`rounded-[var(--radius-lg)] bg-white p-6 shadow-[0_30px_70px_-30px_rgba(11,11,12,0.18)] sm:p-8 ${className}`}>{children}</Reveal>;
+  return <Reveal className={`rounded-[var(--radius-lg)] bg-white p-4 shadow-[0_30px_70px_-30px_rgba(11,11,12,0.18)] sm:p-8 ${className}`}>{children}</Reveal>;
 }
 
 export function Stat({ label, value, note, tone }: { label: string; value: ReactNode; note?: ReactNode; tone?: 'danger' | 'success' }) {
   return (
     <div>
       <p className="text-sm text-muted">{label}</p>
-      <p className={`tabular mt-1 text-[1.7rem] font-[650] tracking-[-0.02em] ${tone === 'danger' ? 'text-danger' : tone === 'success' ? 'text-success' : 'text-navy'}`}>{value}</p>
+      <p className={`tabular mt-1 text-[1.35rem] font-[650] sm:text-[1.7rem] tracking-[-0.02em] ${tone === 'danger' ? 'text-danger' : tone === 'success' ? 'text-success' : 'text-navy'}`}>{value}</p>
       {note && <p className="mt-1 text-sm text-muted">{note}</p>}
     </div>
   );
@@ -114,6 +114,6 @@ export function ConfirmDialog({ confirm, onClose }: { confirm: Confirm | null; o
 }
 
 /** Table styles shared by every list. */
-export const TABLE = 'w-full border-collapse text-left text-sm';
+export const TABLE = 'rtable w-full border-collapse text-left text-sm'; // rtable: cards on phones (globals.css)
 export const TH = 'border-b border-line px-3 py-2.5 text-xs font-semibold text-muted';
 export const TD = 'border-b border-line px-3 py-3 align-top';

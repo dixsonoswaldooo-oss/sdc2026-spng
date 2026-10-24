@@ -1,4 +1,4 @@
-// The shared demo state: one JSON row in Postgres (table esalary_state in lib/db). Used only when DATABASE_URL is set;
+// The shared demo state: one JSON row per demo space in Postgres (table esalary_state in lib/db; see space.ts). Used only when DATABASE_URL is set;
 // without it the app keeps its data in the browser, as before.
 // Saves use optimistic locking: a save only succeeds if nobody else saved since we read, otherwise we read again and retry.
 import { Pool } from 'pg';
@@ -15,7 +15,7 @@ export interface Storage {
   write(data: Data, version: number | null): Promise<boolean>;
 }
 
-const ROW = 'main';
+const KEEP_DAYS = 14; // spaces untouched this long are removed when a new one starts
 export const hasDatabase = () => !!process.env.DATABASE_URL;
 
 // The table is declared in lib/db (so Replit's drizzle push creates and keeps it); the pool is ours, so this app also runs
@@ -23,18 +23,20 @@ export const hasDatabase = () => !!process.env.DATABASE_URL;
 let pool: Pool | undefined;
 const db = () => (pool ??= new Pool({ connectionString: process.env.DATABASE_URL, max: 5 }));
 
-export const postgres: Storage = {
+/** The row of one demo space. */
+export const postgres = (space: string): Storage => ({
   async read() {
-    const r = await db().query<{ data: Data; version: number }>('SELECT data, version FROM esalary_state WHERE id = $1', [ROW]);
+    const r = await db().query<{ data: Data; version: number }>('SELECT data, version FROM esalary_state WHERE id = $1', [space]);
     return r.rows[0] ?? null;
   },
   async write(data, version) {
+    if (version === null) await db().query(`DELETE FROM esalary_state WHERE updated_at < now() - interval '${KEEP_DAYS} days'`);
     const r = version === null
-      ? await db().query('INSERT INTO esalary_state (id, data, version) VALUES ($1, $2, 1) ON CONFLICT (id) DO NOTHING', [ROW, JSON.stringify(data)])
-      : await db().query('UPDATE esalary_state SET data = $2, version = version + 1, updated_at = now() WHERE id = $1 AND version = $3', [ROW, JSON.stringify(data), version]);
+      ? await db().query('INSERT INTO esalary_state (id, data, version) VALUES ($1, $2, 1) ON CONFLICT (id) DO NOTHING', [space, JSON.stringify(data)])
+      : await db().query('UPDATE esalary_state SET data = $2, version = version + 1, updated_at = now() WHERE id = $1 AND version = $3', [space, JSON.stringify(data), version]);
     return r.rowCount === 1;
   },
-};
+});
 
 export function stateIn(storage: Storage) {
   /** Reads, applies `edit`, saves; retries when another save got there first. Starts from the demo data if empty. */
@@ -58,4 +60,4 @@ export function stateIn(storage: Storage) {
   return { load, mutate };
 }
 
-export const state = stateIn(postgres);
+export const stateOf = (space: string) => stateIn(postgres(space));

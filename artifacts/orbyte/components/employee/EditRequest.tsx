@@ -47,7 +47,7 @@ function EditForm({ editing, onClose, onSaved }: { editing: NonNullable<Editing>
               {(Object.keys(LEAVE_TYPE) as LeaveType[]).map((t) => <option key={t} value={t}>{LEAVE_TYPE[t]}</option>)}
             </select>
           </div>
-          <div className="grid gap-x-4 sm:grid-cols-2">
+          <div className="grid grid-cols-2 gap-x-3 sm:gap-x-4">
             <div className="field"><label htmlFor="edit-start">From</label><input id="edit-start" type="date" value={lv.startDate} onChange={(e) => setLv({ ...lv, startDate: e.target.value, endDate: e.target.value > lv.endDate ? e.target.value : lv.endDate })} required /></div>
             <div className="field"><label htmlFor="edit-end">To</label><input id="edit-end" type="date" min={lv.startDate} value={lv.endDate} onChange={(e) => setLv({ ...lv, endDate: e.target.value })} required /></div>
           </div>
@@ -57,7 +57,7 @@ function EditForm({ editing, onClose, onSaved }: { editing: NonNullable<Editing>
       )}
       {o && (
         <>
-          <div className="grid gap-x-4 sm:grid-cols-2">
+          <div className="grid grid-cols-2 gap-x-3 sm:gap-x-4">
             <div className="field"><label htmlFor="edit-date">Date</label><input id="edit-date" type="date" value={o.date} onChange={(e) => setO({ ...o, date: e.target.value })} required /></div>
             <div className="field"><label htmlFor="edit-hours">Hours</label><input id="edit-hours" type="number" min={0.5} max={12} step={0.5} value={o.hours} onChange={(e) => setO({ ...o, hours: Number(e.target.value) })} required /></div>
           </div>

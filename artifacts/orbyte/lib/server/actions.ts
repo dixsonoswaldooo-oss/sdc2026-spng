@@ -60,6 +60,10 @@ export const ACTIONS: Record<string, Rule> = {
   payMonth: { who: 'HR', valid: ([m]) => typeof m === 'string' && /^\d{4}-\d{2}$/.test(m), run: (d, c, [m]) => engine.payMonth(d, c, m as string) },
   markNotificationsRead: { who: 'HR', valid: () => true, run: (d) => engine.markNotificationsRead(d) },
   resetDemo: { who: 'HR', valid: () => true, run: (_d, c) => engine.freshData(c) },
+  simulateEvent: {
+    who: 'HR', valid: ([id, kind]) => str(id) && (kind === 'LATE' || kind === 'ABSENT'),
+    run: (d, c, [id, kind]) => engine.simulateEvent(d, c, id as string, kind as 'LATE' | 'ABSENT'),
+  },
 
   // ---- Employee (always for the signed-in employee) ----
   submitLeave: {

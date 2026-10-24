@@ -59,7 +59,7 @@ export default function Requests() {
                 {(Object.keys(LEAVE_TYPE) as LeaveType[]).map((t) => <option key={t} value={t}>{LEAVE_TYPE[t]}</option>)}
               </select>
             </div>
-            <div className="grid gap-x-4 sm:grid-cols-2">
+            <div className="grid grid-cols-2 gap-x-3 sm:gap-x-4">
               <div className="field"><label htmlFor="start">From</label><input id="start" type="date" value={lv.startDate} onChange={(e) => setLv({ ...lv, startDate: e.target.value, endDate: e.target.value > lv.endDate ? e.target.value : lv.endDate })} required /></div>
               <div className="field"><label htmlFor="end">To</label><input id="end" type="date" min={lv.startDate} value={lv.endDate} onChange={(e) => setLv({ ...lv, endDate: e.target.value })} required /></div>
             </div>
@@ -76,7 +76,7 @@ export default function Requests() {
         <Panel>
           <h2>Overtime</h2>
           <form onSubmit={sendOt} className="mt-5">
-            <div className="grid gap-x-4 sm:grid-cols-2">
+            <div className="grid grid-cols-2 gap-x-3 sm:gap-x-4">
               <div className="field"><label htmlFor="otdate">Date</label><input id="otdate" type="date" value={ot.date} onChange={(e) => setOt({ ...ot, date: e.target.value })} required /></div>
               <div className="field"><label htmlFor="othours">Hours</label><input id="othours" type="number" min={0.5} max={12} step={0.5} value={ot.hours} onChange={(e) => setOt({ ...ot, hours: Number(e.target.value) })} required /></div>
             </div>

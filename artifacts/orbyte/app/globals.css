@@ -39,3 +39,33 @@
 @media (prefers-reduced-motion: reduce) {
   .reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
 }
+
+/* Phones (under 640px). Not in a layer on purpose: it must win over the table cells' utility classes. */
+@media (max-width: 639.98px) {
+  /* Every table (class rtable) becomes a list of cards; AppShell copies each column's header into data-label. */
+  table.rtable, table.rtable > tbody, table.rtable > tbody > tr, table.rtable > tbody > tr > td { display: block; width: 100%; }
+  table.rtable > thead { display: none; }
+  table.rtable > tbody > tr {
+    margin-bottom: 0.75rem; padding: 0.75rem 1rem; background: #fff;
+    border: 1px solid var(--line); border-radius: var(--radius-sm);
+  }
+  table.rtable > tbody > tr > td {
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    padding: 0.35rem 0; border: 0; text-align: right; max-width: none;
+  }
+  table.rtable > tbody > tr > td::before {
+    content: attr(data-label); flex-shrink: 0; max-width: 45%;
+    font-size: 0.75rem; font-weight: 500; color: var(--muted); text-align: left;
+  }
+  table.rtable > tbody > tr > td[data-label=""]::before, table.rtable > tbody > tr > td:not([data-label])::before { content: none; }
+  table.rtable > tbody > tr > td:first-child {
+    display: block; text-align: left; font-weight: 600;
+    margin-bottom: 0.25rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--line);
+  }
+  table.rtable > tbody > tr > td:first-child::before, table.rtable > tbody > tr > td[colspan]::before { content: none; }
+  table.rtable > tbody > tr > td[colspan] { display: block; text-align: left; }
+
+  /* Comfortable to tap; 16px text stops iOS from zooming into a field. */
+  .app .btn { min-height: 44px; }
+  .app input:not([type="checkbox"]):not([type="radio"]), .app select, .app textarea { min-height: 44px; font-size: 16px; }
+}

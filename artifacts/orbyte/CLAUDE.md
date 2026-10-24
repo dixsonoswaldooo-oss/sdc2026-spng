@@ -72,6 +72,10 @@ the table with `npx drizzle-kit push --dialect postgresql --schema ./src/schema/
   A new store action needs an entry there too, or the server refuses it. `lib/server/state.ts` load/save with retries (`state.test.ts`).
 - `lib/store.tsx` runs each action locally (instant), queues it, and sends the queue to `/ai/state` in order (keepalive);
   polls every 4 s for other people's changes.
+- Demo spaces (`lib/server/space.ts`, `/ai/space`, `components/DemoSpace.tsx`): one database row per space, code in the
+  `esg-space` cookie; `/login?space=CODE` joins. `engine.simulateEvent` + `components/hr/SimulateEvent.tsx` = "Try it live".
+- Phones: `AppShell` has a bottom tab bar (HR "More" sheet). Every table uses `TABLE` (class `rtable`) and becomes cards
+  under 640px (`app/globals.css`); AppShell copies `<th>` text into each cell's `data-label`, so keep a header per column.
 - Money only from `lib/payroll.ts`; only attendance deductions (no tax, EPF, SOCSO, EIS). Format money as `RM 3,500.00`.
 - "Today" is the real date in Malaysia (`engine.todayOf`). Imported attendance exists only for days before today
   (`seed.importAttendance`); days not yet happened are never absent. HR corrections live in `attendanceOverrides`, never in the raw data.

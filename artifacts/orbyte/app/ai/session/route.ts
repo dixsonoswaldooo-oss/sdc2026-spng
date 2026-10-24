@@ -3,7 +3,8 @@
 import * as engine from '@/lib/engine';
 import { ACCOUNTS } from '@/lib/seed';
 import { currentAccount, endSession, startSession } from '@/lib/server/session';
-import { hasDatabase, state } from '@/lib/server/state';
+import { currentSpace } from '@/lib/server/space';
+import { hasDatabase, stateOf } from '@/lib/server/state';
 
 const browserMode = () => Response.json({ mode: 'browser' }, { status: 503 });
 
@@ -21,7 +22,7 @@ export async function POST(request: Request): Promise<Response> {
   await startSession(account);
   const who = account.role === 'HR' ? `HR: ${account.name}` : account.name;
   const now = new Date().toISOString();
-  await state.mutate({ actor: 'System', now }, (d) => engine.logLogin(d, { actor: who, now }, who));
+  await stateOf(await currentSpace()).mutate({ actor: 'System', now }, (d) => engine.logLogin(d, { actor: who, now }, who));
   return Response.json({ account });
 }
 

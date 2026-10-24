@@ -74,7 +74,7 @@ export default function Payroll() {
                     <td className={TD}><Money amount={p.overtimePay} /></td>
                     <td className={TD}><Money amount={p.gross} /></td>
                     <td className={TD}>
-                      <button type="button" aria-expanded={open === e.id} onClick={() => setOpen(open === e.id ? null : e.id)} className={`cursor-pointer underline decoration-dotted underline-offset-4 ${p.totalDeductions ? 'text-danger' : 'text-muted'}`}>
+                      <button type="button" aria-expanded={open === e.id} onClick={() => setOpen(open === e.id ? null : e.id)} className={`inline-flex min-h-11 cursor-pointer items-center underline decoration-dotted underline-offset-4 sm:min-h-0 ${p.totalDeductions ? 'text-danger' : 'text-muted'}`}>
                         <Money amount={p.totalDeductions} minus /> {open === e.id ? '▲' : '▼'}
                       </button>
                     </td>

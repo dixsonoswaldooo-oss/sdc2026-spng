@@ -23,6 +23,8 @@ describe('server checks every change against the signed-in account', () => {
     expect(refused(() => perform(fresh(), ahmad, 'decideLeave', ['LV-1', true], NOW), 403)).toBe(true);
     expect(refused(() => perform(fresh(), ahmad, 'payMonth', ['2026-10'], NOW), 403)).toBe(true);
     expect(refused(() => perform(fresh(), ahmad, 'resetDemo', [], NOW), 403)).toBe(true);
+    expect(refused(() => perform(fresh(), ahmad, 'simulateEvent', ['E3', 'LATE'], NOW), 403)).toBe(true);
+    expect(refused(() => perform(fresh(), hr, 'simulateEvent', ['E3', 'HOLIDAY'], NOW), 400)).toBe(true);
     expect(refused(() => perform(fresh(), hr, 'submitLeave', [leave], NOW), 403)).toBe(true);
     expect(refused(() => perform(fresh(), null, 'decideLeave', ['LV-1', true], NOW), 401)).toBe(true);
     expect(perform(fresh(), hr, 'decideLeave', ['LV-1', true], NOW).leaves.find((l) => l.id === 'LV-1')!.status).toBe('APPROVED');

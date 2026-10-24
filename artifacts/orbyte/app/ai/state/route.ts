@@ -1,5 +1,6 @@
 // The shared demo state (database mode). Lives under /ai because Replit sends every /api request to T1's api-server.
-//   GET  ?v=N          → { data, version }, or 204 when the browser already has version N. 503 = no database (browser mode).
+// Each visitor works in their own demo space (lib/server/space.ts).
+//   GET  ?v=N          → { data, version, space }, or 204 when the browser already has version N. 503 = no database (browser mode).
 //   POST { actions: [{ action, args }, …] } → each checked against the signed-in account (lib/server/actions.ts) and run in
 //        order, saved once → { data, version }. A refusal keeps the earlier actions and returns { error, data, version }.
 //   POST { action: "readReason", args: [leaveId] } → the AI reads a pending reason (inside this request) and labels it.
@@ -7,23 +8,26 @@ import * as engine from '@/lib/engine';
 import { performAll, Refused, type Step } from '@/lib/server/actions';
 import { classifyReason } from '@/lib/server/classify';
 import { currentAccount } from '@/lib/server/session';
-import { hasDatabase, state } from '@/lib/server/state';
+import { currentSpace } from '@/lib/server/space';
+import { hasDatabase, stateOf } from '@/lib/server/state';
 
 const browserMode = () => Response.json({ mode: 'browser' }, { status: 503 });
 const ctx = () => ({ actor: 'System', now: new Date().toISOString() });
 
 export async function GET(request: Request): Promise<Response> {
   if (!hasDatabase()) return browserMode();
-  const saved = await state.load(ctx());
+  const space = await currentSpace();
+  const saved = await stateOf(space).load(ctx());
   const known = new URL(request.url).searchParams.get('v');
   if (known !== null && Number(known) === saved.version) return new Response(null, { status: 204 });
-  return Response.json(saved);
+  return Response.json({ ...saved, space });
 }
 
 export async function POST(request: Request): Promise<Response> {
   if (!hasDatabase()) return browserMode();
   const body = (await request.json().catch(() => null)) as { action?: unknown; args?: unknown; actions?: unknown } | null;
   const account = await currentAccount();
+  const state = stateOf(await currentSpace());
   try {
     if (body?.action === 'readReason') {
       const [id] = Array.isArray(body.args) ? body.args : [];

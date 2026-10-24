@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import { SimulateEvent } from '@/components/hr/SimulateEvent';
 import { Badge, Cell, Empty, Money, PageHead, Panel, Stat, TABLE, TD, TH } from '@/components/ui';
 import { isPaid, payrollFor } from '@/lib/engine';
 import { dateTime, monthName, toSen } from '@/lib/format';
@@ -25,7 +26,7 @@ export default function HrDashboard() {
         Take-home pay is recalculated automatically whenever attendance, approvals or settings change.
       </PageHead>
 
-      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
         <Cell><Stat label="Total take-home pay" value={<Money amount={sum((p) => p.netPay)} />} note={`${rows.length} employees`} /></Cell>
         <Cell delay={60}><Stat label="Total overtime cost" value={<Money amount={sum((p) => p.overtimePay)} />} note="Completed overtime only" /></Cell>
         <Cell delay={120}><Stat label="Total bonus" value={<Money amount={sum((p) => p.bonus)} />} /></Cell>
@@ -35,16 +36,16 @@ export default function HrDashboard() {
         </Cell>
       </div>
 
-      <div className="mt-5 grid gap-5 lg:grid-cols-3">
+      <div className="mt-3 grid gap-3 sm:mt-5 sm:gap-5 lg:grid-cols-3">
         <Cell>
           <p className="text-sm text-muted">Waiting for HR</p>
-          <p className="mt-1 text-[1.7rem] font-[650] text-navy">{pendingLeave + pendingOt + cancellations}</p>
+          <p className="mt-1 text-[1.35rem] font-[650] text-navy sm:text-[1.7rem]">{pendingLeave + pendingOt + cancellations}</p>
           <p className="mt-1 text-sm text-muted">{pendingLeave} leave · {pendingOt} overtime · {cancellations} cancellation requests</p>
           <Link href="/hr/approvals" className="btn btn-line mt-4">Open approvals →</Link>
         </Cell>
         <Cell delay={60}>
           <p className="text-sm text-muted">Overtime offers waiting for staff</p>
-          <p className="mt-1 text-[1.7rem] font-[650] text-navy">{openOffers}</p>
+          <p className="mt-1 text-[1.35rem] font-[650] text-navy sm:text-[1.7rem]">{openOffers}</p>
           <Link href="/hr/salary#overtime" className="btn btn-line mt-4">Offer overtime →</Link>
         </Cell>
         <Cell delay={120}>
@@ -53,6 +54,8 @@ export default function HrDashboard() {
           <p className="mt-2 text-sm text-muted">{paid ? `Paid ${dateTime(paid.paidAt)} by ${paid.paidBy}` : isPaid(data, DEMO_MONTH) ? '' : 'Pay everyone in one click after review.'}</p>
         </Cell>
       </div>
+
+      <SimulateEvent />
 
       <Panel className="mt-8">
         <div id="deductions" className="scroll-mt-40" />

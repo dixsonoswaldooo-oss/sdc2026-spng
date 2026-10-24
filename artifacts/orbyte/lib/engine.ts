@@ -239,7 +239,7 @@ const describeDay = (r: AttendanceRecord | undefined) =>
   !r ? 'no record' : r.izin ? 'izin (permitted)' : !r.clockIn ? 'absent' : r.lateMinutes ? `present, ${r.lateMinutes} min late` : 'present, on time';
 
 /** HR corrects one day (null = back to the imported value). Only days that have happened, never in a paid month. */
-export const setAttendance = (data: Data, ctx: Ctx, employeeId: string, day: ISODate, value: { status: AttendanceOverride['status']; lateMinutes: number } | null) =>
+export const setAttendance = (data: Data, ctx: Ctx, employeeId: string, day: ISODate, value: { status: AttendanceOverride['status']; lateMinutes: number } | null, action = 'Edited attendance') =>
   change(data, ctx, (d) => {
     if (!d.attendance.some((a) => a.employeeId === employeeId && a.date === day)) throw new Error('Only working days that have already happened can be edited.');
     assertOpen(d, [day]);
@@ -254,8 +254,24 @@ export const setAttendance = (data: Data, ctx: Ctx, employeeId: string, day: ISO
       d.attendanceOverrides[key] = { status: value.status, lateMinutes: late, by: ctx.actor, at: ctx.now };
     }
     const after = describeDay(attendanceOf(d, employeeId).find((a) => a.date === day));
-    log(d, ctx, 'ATTENDANCE', value === null ? 'Reset attendance to the imported value' : 'Edited attendance', employee(d, employeeId).name, `${day}: ${before} → ${after}`);
+    log(d, ctx, 'ATTENDANCE', value === null ? 'Reset attendance to the imported value' : action, employee(d, employeeId).name, `${day}: ${before} → ${after}`);
   });
+
+/** The latest working day of the month that has already happened for this employee (null before the month starts). */
+export const lastWorkedDay = (d: Data, employeeId: string, month: Month = DEMO_MONTH): ISODate | null =>
+  d.attendance.filter((a) => a.employeeId === employeeId && a.date.startsWith(month)).map((a) => a.date).sort().at(-1) ?? null;
+
+/**
+ * Demo button: makes something happen on the last working day that has passed ("today" follows the real date, so today's
+ * attendance does not exist yet), so the deduction, WhatsApp alert and payslip change can be shown at once. Undo = reset that day.
+ */
+export function simulateEvent(data: Data, ctx: Ctx, employeeId: string, kind: 'LATE' | 'ABSENT'): Data {
+  const day = lastWorkedDay(data, employeeId);
+  if (!day) throw new Error('No working day of this month has passed yet.');
+  const now = attendanceOf(data, employeeId).find((a) => a.date === day)!;
+  const value = kind === 'ABSENT' ? { status: 'ABSENT' as const, lateMinutes: 0 } : { status: 'PRESENT' as const, lateMinutes: Math.max(25, now.lateMinutes + 15) };
+  return setAttendance(data, ctx, employeeId, day, value, 'Simulated attendance event (demo)');
+}
 
 /** Monthly counts for the attendance screen. Izin = days HR marked izin + approved "Permission" leave days. */
 export function attendanceSummary(d: Data, employeeId: string, month: Month) {

@@ -56,7 +56,7 @@ export default function SalaryControls() {
 
       <Panel>
         <h2>Global rules</h2>
-        <div className="mt-5 grid gap-x-6 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="mt-5 grid grid-cols-2 gap-x-3 sm:gap-x-6 lg:grid-cols-5">
           {FIELDS.map(([key, label, unit, step]) => (
             <div key={key} className="field">
               <label htmlFor={key}>{label}</label>

@@ -96,6 +96,23 @@ describe('6. HR edits attendance', () => {
   });
 });
 
+describe('demo: simulate an event', () => {
+  it('late or absent on the last working day that has passed: deduction, WhatsApp, logged; undo restores it', () => {
+    const d0 = fresh();
+    expect(engine.lastWorkedDay(d0, 'E3')).toBe('2026-10-22'); // today is 23 Oct
+    const late = engine.simulateEvent(d0, hr, 'E3', 'LATE');
+    expect(net(late, 'E3')).toBe(net(d0, 'E3') - 7.5); // 25 − 10 minutes tolerance × RM 0.50
+    expect(late.whatsapp[0]).toMatchObject({ employeeId: 'E3', kind: 'DEDUCTION' });
+    expect(late.whatsapp[0].text).toMatch(/25 minutes late on 22 Oct/);
+    expect(late.activity.some((a) => a.action === 'Simulated attendance event (demo)' && a.target === 'Ravi Kumar')).toBe(true);
+    expect(net(engine.setAttendance(late, hr, 'E3', '2026-10-22', null), 'E3')).toBe(net(d0, 'E3'));
+
+    const absent = engine.simulateEvent(d0, hr, 'E4', 'ABSENT');
+    expect(net(absent, 'E4')).toBe(net(d0, 'E4') - 100); // 2,200 / 22
+    expect(() => engine.simulateEvent(engine.payMonth(d0, hr, '2026-10'), hr, 'E3', 'LATE')).toThrow(/locked/);
+  });
+});
+
 describe('7. requests are saved at once; the AI label comes later', () => {
   it('a pending request exists before the AI answers; an answer for an old reason is ignored', () => {
     const d1 = submit(fresh(), '2026-10-29', 'Anak saya masuk wad');

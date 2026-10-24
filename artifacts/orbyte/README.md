@@ -54,7 +54,16 @@ a laptop), each browser keeps its own copy in localStorage, as before.
   from `DATABASE_URL` is used).
 - The browser shows a change at once, then sends it to the server in order; the server's answer wins. If the server
   refuses (e.g. someone else decided first), a red banner explains why and the real state is shown.
-- All judges and teammates share the same demo data, so one person's actions are visible to the others.
+- **Demo spaces:** every visitor automatically gets their own space (a 6-character code, one database row each), so one
+  judge can't change what the next one sees. The sign-in page shows the code and a link: open `/login?space=CODE` on a
+  second device (e.g. HR on a laptop, an employee on a phone) to work in the same space, or start a fresh one.
+  Reset only resets your space. Spaces untouched for 14 days are removed.
+
+## Showing it in a demo
+
+- HR dashboard → **Try it live**: pick an employee, click "25 min late" or "Didn't come in". It is applied to the last
+  working day that has passed; the WhatsApp alert they get and their new take-home pay appear at once. **Undo** resets it.
+- On a phone: bottom tab bar (HR: Home, Rules, Approvals, Payroll, More), tables shown as cards, 44px tap targets.
 
 ## AI for leave reasons (optional)
 

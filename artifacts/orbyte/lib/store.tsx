@@ -16,7 +16,7 @@ const POLL_MS = 4_000;
 
 type Data = engine.Data;
 type Mode = 'browser' | 'server';
-type Saved = { data: Data; version: number };
+type Saved = { data: Data; version: number; space?: string };
 type OvertimeMove = 'APPROVED' | 'REJECTED' | 'ACCEPTED' | 'DECLINED' | 'COMPLETED';
 type LeaveInput = { type: LeaveType; startDate: string; endDate: string; reason: string };
 type OvertimeInput = { date: string; hours: number; note: string };
@@ -25,6 +25,10 @@ interface Store {
   data: Data;
   account: Account | null;
   mode: Mode;
+  /** Database mode: this visitor's demo space code (null in browser mode). */
+  space: string | null;
+  /** Database mode: join another device's space by its code, or start a fresh space (no code). */
+  joinSpace: (code?: string) => Promise<void>;
   /** The server refused or could not save the last change (database mode); shown as a banner. */
   serverError: string | null;
   clearServerError: () => void;
@@ -36,6 +40,8 @@ interface Store {
   setDivisionOvertime: (division: string, rate: number | null) => void;
   updateLeaveAllowance: (id: string, days: number) => void;
   setAttendance: (employeeId: string, day: ISODate, value: { status: AttendanceOverride['status']; lateMinutes: number } | null) => void;
+  /** Demo: late or absent on the last working day that has passed. Undo with setAttendance(id, day, null). */
+  simulateEvent: (employeeId: string, kind: 'LATE' | 'ABSENT') => void;
   /** Saved at once as pending; the AI reads the reason in the background and its label replaces the keyword one. */
   submitLeave: (input: LeaveInput) => void;
   editLeave: (id: string, input: LeaveInput) => void;
@@ -92,6 +98,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [account, setAccount] = useState<Account | null>(null);
   const [mode, setMode] = useState<Mode>('browser');
   const [serverError, setServerError] = useState<string | null>(null);
+  const [space, setSpace] = useState<string | null>(null);
+  const spaceRef = useRef<string | null>(null); // answers for another space (a poll from before switching) are ignored
   const dataRef = useRef<Data | null>(null);
   const modeRef = useRef<Mode>('browser');
   const versionRef = useRef(0);
@@ -143,6 +151,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   /** Database mode: take the server's state if it is newer than what is shown, unless changes made here are still on their way. */
   function accept(saved: Saved) {
     if (saved.version < versionRef.current || queue.current.length || sending.current) return;
+    if (saved.space && spaceRef.current && saved.space !== spaceRef.current) return;
+    if (saved.space) {
+      spaceRef.current = saved.space;
+      setSpace(saved.space);
+    }
     versionRef.current = saved.version;
     show(saved.data);
     readPending(saved.data);
@@ -266,6 +279,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       data,
       account,
       mode,
+      space,
+      joinSpace: async (code) => {
+        await drained();
+        const r = await post('/ai/space', code ? { code } : {});
+        const body = (await r.json()) as { space?: string; error?: string };
+        if (!r.ok) throw new Error(body.error ?? 'Could not switch demo space.');
+        spaceRef.current = body.space ?? null;
+        setSpace(spaceRef.current);
+        versionRef.current = 0;
+        await pull(true);
+      },
       serverError,
       clearServerError: () => setServerError(null),
       signIn: async (accountId, password = 'demo') => {
@@ -295,6 +319,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setDivisionOvertime: (division, rate) => act('setDivisionOvertime', [division, rate], (d) => engine.setDivisionOvertime(d, ctx(), division, rate)),
       updateLeaveAllowance: (id, days) => act('updateLeaveAllowance', [id, days], (d) => engine.updateLeaveAllowance(d, ctx(), id, days)),
       setAttendance: (employeeId, day, value) => act('setAttendance', [employeeId, day, value], (d) => engine.setAttendance(d, ctx(), employeeId, day, value)),
+      simulateEvent: (employeeId, kind) => act('simulateEvent', [employeeId, kind], (d) => engine.simulateEvent(d, ctx(), employeeId, kind)),
       submitLeave: (input) => {
         const employeeId = myEmployeeId();
         act('submitLeave', [input], (d) => engine.submitLeave(d, ctx(), employeeId, input, keywordClassify(input.type, input.reason), true));
@@ -324,7 +349,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       payMonth: (month) => act('payMonth', [month], (d) => engine.payMonth(d, ctx(), month)),
       markNotificationsRead: () => act('markNotificationsRead', [], (d) => engine.markNotificationsRead(d)),
     };
-  }, [data, account, mode, serverError, save, send, pull, drained, readInBackground]);
+  }, [data, account, mode, space, serverError, save, send, pull, drained, readInBackground]);
 
   if (!store) {
     return <div className="grid min-h-screen place-items-center text-sm text-[var(--muted)]">Loading e-Salary Guard…</div>;

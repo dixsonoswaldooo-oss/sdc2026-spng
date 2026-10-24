@@ -129,10 +129,10 @@ export function OvertimeControls() {
             <button type="button" className="btn btn-ghost mt-2 !px-4 !py-2" onClick={() => setPicked(people.map((e) => e.id))}>Select everyone in {division}</button>
           )}
         </fieldset>
-        <div className="mt-5 grid gap-x-6 sm:grid-cols-[1fr_1fr_2fr]">
+        <div className="mt-5 grid grid-cols-2 gap-x-3 sm:grid-cols-[1fr_1fr_2fr] sm:gap-x-6">
           <div className="field"><label htmlFor="day">Date</label><input id="day" type="date" value={day} onChange={(e) => setDay(e.target.value)} required /></div>
           <div className="field"><label htmlFor="hours">Hours</label><input id="hours" type="number" min={0.5} max={12} step={0.5} value={hours} onChange={(e) => setHours(Number(e.target.value))} required /></div>
-          <div className="field"><label htmlFor="note">Note</label><input id="note" value={note} onChange={(e) => setNote(e.target.value)} required /></div>
+          <div className="field col-span-2 sm:col-span-1"><label htmlFor="note">Note</label><input id="note" value={note} onChange={(e) => setNote(e.target.value)} required /></div>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <button type="submit" className="btn btn-primary" disabled={!picked.length}>Send offer</button>

@@ -2,6 +2,7 @@
 // Shared sign-in page. Sign-in is simulated: pick a demo account (password "demo").
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
+import { DemoSpace } from '@/components/DemoSpace';
 import { Reveal } from '@/components/Reveal';
 import { ACCOUNTS, COMPANY, EMPLOYEES } from '@/lib/seed';
 import { useStore } from '@/lib/store';
@@ -94,6 +95,7 @@ export default function LoginPage() {
               })}
             </ul>
           </div>
+          <DemoSpace />
         </Reveal>
       </main>
     </div>
