@@ -10,7 +10,7 @@
 | ---------------------- | ------------------------------------------- |
 | **Team Name**          | SPNG                                        |
 | **Team Domain**        | Domain 2                                    |
-| **SDG Track (1–17)**   | e.g. SDG 11 — Sustainable Cities and Communities |
+| **SDG Track (1–17)**   | SDG 8 — Decent Work and Economic Growth     |
 | **Team Leader**        | Dixson Oswaldo Tanjaya                      |
 | **University**         | Xiamen University Malaysia                  |
 | **Number of Members**  | 5                                           |
