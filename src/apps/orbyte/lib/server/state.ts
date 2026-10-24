@@ -1,4 +1,4 @@
-// The shared demo state: one JSON row per demo space in Postgres (table esalary_state in lib/db; see space.ts). Used only when DATABASE_URL is set;
+// The shared demo state: one JSON row per demo space in Postgres (table esalary_state in src/lib/db; see space.ts). Used only when DATABASE_URL is set;
 // without it the app keeps its data in the browser, as before.
 // Saves use optimistic locking: a save only succeeds if nobody else saved since we read, otherwise we read again and retry.
 import { Pool } from 'pg';
@@ -18,7 +18,7 @@ export interface Storage {
 const KEEP_DAYS = 14; // spaces untouched this long are removed when a new one starts
 export const hasDatabase = () => !!process.env.DATABASE_URL;
 
-// The table is declared in lib/db (so Replit's drizzle push creates and keeps it); the pool is ours, so this app also runs
+// The table is declared in src/lib/db (so Replit's drizzle push creates and keeps it); the pool is ours, so this app also runs
 // outside the team repo. Created on first use: nothing connects without DATABASE_URL.
 let pool: Pool | undefined;
 const db = () => (pool ??= new Pool({ connectionString: process.env.DATABASE_URL, max: 5 }));

@@ -19,7 +19,7 @@ Open http://localhost:5173. Click **e-Salary Guard** in the top menu (or **Open 
 Other commands: `run test` (Vitest), `run typecheck`, `run build`. Windows notes are in `CLAUDE.md`.
 
 **On Replit:** Tools → Git → Pull, then run the app (the artifact's `dev` command serves it at `/`), then Publish.
-The RUNPOD_* values and DATABASE_URL come from Replit Secrets. Every `/api` request goes to T1's `artifacts/api-server`, which is why
+The RUNPOD_* values and DATABASE_URL come from Replit Secrets. Every `/api` request goes to T1's `src/apps/api-server`, which is why
 the leave classifier lives at `/ai/classify-leave`.
 
 ## Demo accounts
@@ -45,7 +45,7 @@ With `DATABASE_URL` set (Replit provides it), everyone uses **one shared state**
 phone shows up on HR's laptop within a few seconds, and HR's decision shows up on the phone. Without it (e.g. the zip on
 a laptop), each browser keeps its own copy in localStorage, as before.
 
-- The table `esalary_state` is declared in `lib/db/src/schema/esalary.ts`; Replit's post-merge `drizzle-kit push` creates it.
+- The table `esalary_state` is declared in `src/lib/db/src/schema/esalary.ts`; Replit's post-merge `drizzle-kit push` creates it.
   It holds the whole demo state as one JSON row with a `version`, so two saves at once can't overwrite each other.
   The database must be UTF8 (Replit's is).
 - `/ai/session` signs in (demo password `demo`) and sets a signed, httpOnly cookie. `/ai/state` loads the state and runs

@@ -25,14 +25,16 @@ Orbyte Cash Guard is a cash-flow planning and approval demo for SDC Hackathon 20
 
 ## Where things live
 
-- `artifacts/orbyte/` — React/Vite frontend, including Cash Guard and `/tes-ai`.
-- `artifacts/api-server/` — Express health and AI-test endpoints.
+- `src/apps/orbyte/` — Next.js application source for e-Salary Guard. Replit registration remains at `artifacts/orbyte/.replit-artifact/artifact.toml`.
+- `src/apps/api-server/` — Express health and AI-test endpoints. Replit registration remains at `artifacts/api-server/.replit-artifact/artifact.toml`.
+- `src/apps/mockup-sandbox/` — component preview application source. Its Replit registration remains under `artifacts/mockup-sandbox/`.
+- `src/lib/` — shared API and database workspace packages.
 - `docs/frontend-api-contract.md` — Cash Guard API contract for future backend integration.
-- `.migration-backup/` — older Next.js starter; not the current application.
+- `src/.migration-backup/` — older Next.js starter; not the current application.
 
 ## Architecture decisions
 
-- Preserve the newer Cash Guard frontend rather than overwriting it with the older starter in `.migration-backup`.
+- Preserve the newer Cash Guard frontend rather than overwriting it with the older starter in `src/.migration-backup`.
 - Artifact metadata owns workflow ports and preview routing; do not add duplicate workflows or run root-level `pnpm dev`.
 
 ## Product

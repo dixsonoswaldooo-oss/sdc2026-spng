@@ -1,4 +1,4 @@
-# CLAUDE.md — e-Salary Guard (Frontend, `artifacts/orbyte`)
+# CLAUDE.md — e-Salary Guard (Frontend, `src/apps/orbyte`)
 
 This file is read at the start of every session. Follow it unless a team member explicitly overrides a rule in chat.
 Replaces the Payroll Cash Guard version (Cash Guard code is in git history up to commit `5f962a0`).
@@ -14,25 +14,25 @@ Replaces the Payroll Cash Guard version (Cash Guard code is in git history up to
 - Architecture (one Replit app, same address):
 
 ```
-artifacts/orbyte (Next.js, web at /)  ── /ai/classify-leave (server route) ──→ SEA-LION on RunPod (T2)
-                                       ├─ /ai/state, /ai/session ──→ Postgres table esalary_state (declared in lib/db)
-                                       └─ /tes-ai page ──→ artifacts/api-server /api/ai-test (Express, T1)
+src/apps/orbyte (Next.js, web at /)  ── /ai/classify-leave (server route) ──→ SEA-LION on RunPod (T2)
+                                       ├─ /ai/state, /ai/session ──→ Postgres table esalary_state (declared in src/lib/db)
+                                       └─ /tes-ai page ──→ src/apps/api-server /api/ai-test (Express, T1)
 ```
 
 - **Shared database** (when `DATABASE_URL` is set, i.e. on Replit): the whole demo state is one JSONB row with a `version`
   (optimistic locking). Every change runs on the server through `lib/server/actions.ts` (role + ownership + input checks,
   then the same `engine.ts` functions), signed-in account from a signed httpOnly cookie (`lib/server/session.ts`).
   Without `DATABASE_URL` the app falls back to localStorage (browser mode), e.g. for the laptop zip.
-  The table is in T1's `lib/db` (with T1's permission) so Replit's `drizzle-kit push` keeps it; the app uses its own `pg` pool.
+  The table is in T1's `src/lib/db` (with T1's permission) so Replit's `drizzle-kit push` keeps it; the app uses its own `pg` pool.
 
 - **Change from the old rule** ("all AI through `/api`"): the leave classifier is a Next.js server route in this artifact.
   It reads `RUNPOD_API_KEY`, `RUNPOD_ENDPOINT_ID`, `RUNPOD_MODEL` from Replit Secrets; nothing reaches the browser.
-  It is at `/ai/...`, not `/api/...`, because Replit sends every `/api` request to `artifacts/api-server`.
+  It is at `/ai/...`, not `/api/...`, because Replit sends every `/api` request to `src/apps/api-server`.
 - GitHub is the single source of truth. Replit pulls from GitHub (Tools → Git → Pull) and publishes.
 
 ```
-/artifacts/orbyte       ← your scope
-/artifacts/api-server   ← DO NOT EDIT (T1)
+/src/apps/orbyte       ← your scope
+/src/apps/api-server   ← DO NOT EDIT (T1)
 /lib, root config, .replit, pnpm-workspace.yaml ← DO NOT EDIT (T1 / Replit)
 pnpm-lock.yaml          ← changes only when this artifact's dependencies change (ask first)
 /docs                   ← you may add /docs/frontend-*.md only
@@ -60,7 +60,7 @@ Windows only: the repo strips Windows binaries (Replit is Linux). If the build f
 `@tailwindcss/oxide-win32-x64-msvc` (same versions) into their packages' `node_modules` under `node_modules/.pnpm`. Never commit this.
 For the AI locally, export the three RUNPOD_* values in the shell (never commit `.env*` files).
 Database mode locally: any UTF8 Postgres (a WIN1252 database rejects the "→" in log entries), set `DATABASE_URL`, create
-the table with `npx drizzle-kit push --dialect postgresql --schema ./src/schema/index.ts --url <DATABASE_URL>` run in `lib/db`
+the table with `npx drizzle-kit push --dialect postgresql --schema ./src/schema/index.ts --url <DATABASE_URL>` run in `src/lib/db`
 (on Windows the config file's absolute schema path fails; Replit runs the normal `pnpm --filter db push`).
 
 ## 4. Where things live

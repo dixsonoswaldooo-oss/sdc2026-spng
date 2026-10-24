@@ -1,6 +1,6 @@
 import { integer, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
-// e-Salary Guard (artifacts/orbyte): the whole demo state as one JSON document per row ("main").
+// e-Salary Guard (src/apps/orbyte): the whole demo state as one JSON document per row ("main").
 // `version` goes up on every save, so two servers writing at once can't overwrite each other (optimistic locking).
 export const esalaryStateTable = pgTable("esalary_state", {
   id: text("id").primaryKey(),

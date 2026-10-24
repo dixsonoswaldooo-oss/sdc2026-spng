@@ -1,7 +1,7 @@
 # Cash Guard API contract (frontend ⇄ backend)
 
-Source of truth for the shapes: `artifacts/orbyte/src/api/types.ts`. Change both in the same commit.
-The mock engine (`artifacts/orbyte/src/mocks/engine.ts`) implements this contract and its tests
+Source of truth for the shapes: `src/apps/orbyte/src/api/types.ts`. Change both in the same commit.
+The mock engine (`src/apps/orbyte/src/mocks/engine.ts`) implements this contract and its tests
 (`engine.test.ts`) show the expected numbers. T1 can copy its business rules.
 
 ## General
