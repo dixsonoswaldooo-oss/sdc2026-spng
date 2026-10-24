@@ -199,7 +199,7 @@ Most importantly, we learned that communication and proper task distribution are
 | Gregorius Marvel Wicaksana | Backend / AI           | [@marvelwicaksana-hue](https://github.com/marvelwicaksana-hue) |
 | Manuel Otto Chandra | Backend / RunPod         | [@manuism](https://github.com/manuism) |
 | Owen Ferdinand Lee | Frontend            | [@owennew2015](https://github.com/owennew2015) |
-| Sunu Adi Sotya | Proposal         | [@username](https://github.com/Sunnadd) |
+| Sunu Adi Sotya | Proposal         | [@Sunnadd](https://github.com/Sunnadd) |
 
 
 ---
