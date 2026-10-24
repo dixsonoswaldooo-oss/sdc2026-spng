@@ -141,7 +141,7 @@ python -m unittest discover tests
 - **Development:** Replit serves as our main development environment for building and maintaining the application's code.
 - **Configuration:** Environment variables and sensitive credentials are managed through Replit Secrets to avoid exposing API keys in the source code.
 
-📄 Proof of use: [`submission/SDC2026_TeamName_Replit_POU.pdf`](submission/SDC2026_TeamName_Replit_POU.pdf)
+📄 Proof of use: [`submission/SDC2026_SPNG_Replit_POU.pdf`](submission/SDC2026_SPNG_Replit_POU.pdf)
 
 ## How We Use RunPod *(Required)*
 
@@ -149,16 +149,7 @@ python -m unittest discover tests
 - **Server Deployment:** Our GPU workload runs on RunPod's server infrastructure, allowing the application to offload processing tasks from Replit.
 - **Integration:** RunPod works alongside our Replit-hosted application to support backend processing using GPU resources.
 
-Example request:
-
-```bash
-curl -X POST https://api.runpod.ai/v2/$RUNPOD_ENDPOINT_ID/runsync \
-  -H "Authorization: Bearer $RUNPOD_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{"input": {"prompt": "Hello"}}'
-```
-
-📄 Proof of use: [`submission/SDC2026_TeamName_Runpod_POU.pdf`](submission/SDC2026_TeamName_Runpod_POU.pdf)
+📄 Proof of use: [`submission/SDC2026_SPNG_Runpod_POU.pdf`](submission/SDC2026_SPNG_Runpod_POU.pdf)
 
 ---
 
