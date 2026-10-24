@@ -65,45 +65,45 @@ e-Salary Guard is an AI-powered payroll management system that automatically cal
 
 ```
 e-salary-guard/
-├── app/                                # Halaman dan navigasi aplikasi
+├── app/                                
 │   ├── employee/
-│   │   ├── dashboard/                  # Perkiraan gaji dan notifikasi
-│   │   ├── leave-applications/         # Ajukan, ubah, atau tarik cuti
-│   │   ├── overtime-requests/          # Ajukan lembur dan lihat status
-│   │   └── payslips/                   # Slip dan riwayat pembayaran
+│   │   ├── dashboard/                  
+│   │   ├── leave-applications/        
+│   │   ├── overtime-requests/         
+│   │   └── payslips/                 
 │   ├── hr/
-│   │   ├── dashboard/                  # Ringkasan pengajuan dan payroll
-│   │   ├── salary-rules/               # Aturan gaji dan potongan
-│   │   ├── attendance/                 # Tinjau dan koreksi absensi
-│   │   ├── leave-approvals/            # Tinjau dan putuskan pengajuan cuti
-│   │   ├── overtime-approvals/         # Tinjau dan putuskan pengajuan lembur
-│   │   ├── deductions/                 # Pantau potongan karyawan
-│   │   ├── payroll/                    # Tinjau dan proses draft payroll
-│   │   └── activity-history/           # Riwayat tindakan dan perubahan
-│   └── api/                            # Endpoint aplikasi
-├── components/                         # Komponen UI yang digunakan bersama
+│   │   ├── dashboard/                 
+│   │   ├── salary-rules/              
+│   │   ├── attendance/                
+│   │   ├── leave-approvals/            
+│   │   ├── overtime-approvals/         
+│   │   ├── deductions/             
+│   │   ├── payroll/                    
+│   │   └── activity-history/           
+│   └── api/                            
+├── components/                     
 ├── services/
-│   ├── attendance-service              # Membaca absensi dan menyimpan koreksi
-│   ├── leave-service                   # Mengelola pengajuan dan keputusan cuti
-│   ├── overtime-service                # Mengelola pengajuan dan lembur selesai
-│   ├── salary-rules-service            # Mengelola aturan gaji dan tarif
-│   ├── deduction-service               # Menghitung dan menjelaskan potongan
-│   ├── payroll-service                 # Menghitung draft gaji dan membuat slip
-│   ├── notification-service            # Mengirim notifikasi dalam akun
-│   └── activity-log-service            # Mencatat tindakan untuk audit
+│   ├── attendance-service             
+│   ├── leave-service                  
+│   ├── overtime-service                
+│   ├── salary-rules-service           
+│   ├── deduction-service              
+│   ├── payroll-service                
+│   ├── notification-service           
+│   └── activity-log-service           
 ├── integrations/
-│   ├── directory/                      # Data karyawan dan akun
-│   ├── attendance/                     # Data absensi
-│   ├── eleave/                         # Data cuti dan jatah cuti
-│   ├── eot/                            # Data lembur
-│   └── payroll-connect/                # Pengiriman hasil ke sistem payroll
+│   ├── directory/                     
+│   ├── attendance/                    
+│   ├── eleave/                       
+│   ├── eot/                           
+│   └── payroll-connect/                
 ├── ai/
-│   └── leave-reason-advisor/            # Saran AI untuk alasan cuti
+│   └── leave-reason-advisor/            
 ├── database/
-│   ├── schema/                          # Struktur data
-│   └── migrations/                      # Perubahan database
-├── tests/                               # Pengujian aplikasi
-├── .env.example                         # Contoh konfigurasi
+│   ├── schema/                         
+│   └── migrations/                      
+├── tests/                             
+├── .env.example                        
 ├── package.json
 └── README.md
 ```
@@ -112,13 +112,13 @@ e-salary-guard/
 
 ```
 Employee
-  ├── Mengajukan, mengubah, atau menarik cuti
-  ├── Mengajukan lembur
-  └── Melihat notifikasi, perkiraan gaji, dan slip
+  ├── Submits, edits, or withdraws leave requests
+  ├── Submits overtime requests
+  └── Views notifications, salary estimates, and payslips
           │
           ▼
 Application
-  ├── Leave Service ── AI memberi saran atas alasan cuti
+  ├── Leave Service ── AI suggests how to handle leave reasons
   ├── Overtime Service
   ├── Attendance Service
   ├── Salary Rules Service
@@ -126,23 +126,23 @@ Application
           │
           ▼
 HR Dashboard
-  ├── Mengatur aturan gaji, potongan, dan tarif lembur
-  ├── Mengoreksi absensi dengan catatan perubahan
-  ├── Menyetujui atau menolak cuti dan lembur
-  ├── Melihat karyawan yang terkena potongan
-  └── Meninjau draft payroll dan mencatat pembayaran
+  ├── Sets salary, deduction, and overtime rules
+  ├── Corrects attendance with a recorded change history
+  ├── Approves or rejects leave and overtime requests
+  ├── Views employees with deductions
+  └── Reviews payroll drafts and records payments
           │
           ▼
 Database
-  ├── Data karyawan, aturan gaji, dan pengajuan
-  ├── Absensi asli dan koreksi yang tersimpan terpisah
-  ├── Keputusan HR dan hasil perhitungan gaji
-  ├── Notifikasi, slip, dan nomor referensi pembayaran
+  ├── Employee data, salary rules, and requests
+  ├── Original attendance records and separate corrections
+  ├── HR decisions and salary calculations
+  ├── Notifications, payslips, and payment reference numbers
   └── Activity history
           │
           ▼
 Payroll System / Bank
-  └── Menangani transfer dan perhitungan EPF, SOCSO, EIS, serta PCB
+  └── Handles transfers and EPF, SOCSO, EIS, and PCB calculations
 ```
 
 ---
