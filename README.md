@@ -137,21 +137,17 @@ python -m unittest discover tests
 
 ## How We Use Replit *(Required)*
 
-Describe how your team used Replit. For example:
-
-- **Development:** Collaborative coding in a shared Repl using Multiplayer.
-- **Hosting:** The app is deployed with Replit Deployments at the Live Demo link above.
-- **Secrets:** API keys are stored in Replit Secrets, never in the code.
+- **Hosting:** We use Replit to host and deploy our e-Salary Guard web application, making it accessible through our Live Demo link.
+- **Development:** Replit serves as our main development environment for building and maintaining the application's code.
+- **Configuration:** Environment variables and sensitive credentials are managed through Replit Secrets to avoid exposing API keys in the source code.
 
 📄 Proof of use: [`submission/SDC2026_TeamName_Replit_POU.pdf`](submission/SDC2026_TeamName_Replit_POU.pdf)
 
 ## How We Use RunPod *(Required)*
 
-Describe how your team used RunPod. For example:
-
-- **Workload:** Model inference (e.g. text generation, image processing) runs on a RunPod GPU.
-- **Setup:** `runpod/handler.py` is deployed as a **RunPod Serverless Endpoint**.
-- **Integration:** The Replit app sends requests to the endpoint using `RUNPOD_API_KEY` and `RUNPOD_ENDPOINT_ID`.
+- **GPU Computing:** We use RunPod to provide GPU computing resources for server-side processing and computational workloads that require additional processing power.
+- **Server Deployment:** Our GPU workload runs on RunPod's server infrastructure, allowing the application to offload processing tasks from Replit.
+- **Integration:** RunPod works alongside our Replit-hosted application to support backend processing using GPU resources.
 
 Example request:
 
@@ -191,8 +187,12 @@ Most importantly, we learned that communication and proper task distribution are
 
 ## Future Improvements
 
-- [ ] Improvement 1
-- [ ] Improvement 2
+- Enhanced AI Accuracy: Improve the AI model's accuracy and reliability to provide more precise salary-related insights and detect potential payroll discrepancies more effectively.
+- Real-Time Payroll Integration: Integrate the system with existing payroll platforms to retrieve up-to-date salary information and automatically identify inconsistencies.
+- Stronger Security and Data Privacy: Implement multi-factor authentication, data encryption, and stricter access controls to protect sensitive employee and salary information.
+- Personalized Salary Insights: Provide personalized dashboards and reports to help employees better understand their salary breakdowns, deductions, and payment history.
+- Scalability and Performance: Optimize the system to handle larger datasets and more users while maintaining fast response times and stable performance.
+- Improved User Experience: Enhance the interface to make the system more intuitive, mobile-friendly, and accessible to users with different levels of technical knowledge.
 
 ## Team
 
