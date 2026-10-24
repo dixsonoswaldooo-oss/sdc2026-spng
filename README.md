@@ -53,9 +53,9 @@ e-Salary Guard is an AI-powered payroll management system that automatically cal
 
 | Layer         | Technology                   |
 | ------------- | ---------------------------- |
-| Frontend      | e.g. HTML, React             |
-| Backend       | e.g. Python, Flask / FastAPI |
-| Database      | e.g. PostgreSQL, SQLite      |
+| Frontend      | Next.js                      |
+| Backend       | Node.js                      |
+| Database      | PostgreSQL                   |
 | AI / Compute  | RunPod (GPU)                 |
 | Hosting / Dev | Replit                       |
 
