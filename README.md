@@ -169,7 +169,8 @@ curl -X POST https://api.runpod.ai/v2/$RUNPOD_ENDPOINT_ID/runsync \
 ## Challenges & Learnings
 
 - What challenges did you face, and how did you overcome them?
-    One of the main challenges we faced was coming up with an original idea. Since many of the features we initially considered were already available in Orbyte, we had to narrow down our ideas and focus on features that could provide additional value.
+
+One of the main challenges we faced was coming up with an original idea. Since many of the features we initially considered were already available in Orbyte, we had to narrow down our ideas and focus on features that could provide additional value.
 
 Another challenge was task distribution within the team. We needed to figure out how to divide the workload fairly based on each member's abilities and ensure that everyone could contribute effectively to the project.
 
@@ -179,8 +180,10 @@ Additionally, our team had limited prior experience with GitHub and collaborativ
 
 Despite these challenges, we gradually overcame them by exploring the platforms, testing different approaches, discussing problems as a team, and learning from online documentation and resources.
 
+
 - What did your team learn?
-    Throughout this project, we learned the importance of problem-solving, teamwork, and adaptability. We realized that developing a successful project is not only about coming up with creative ideas but also about identifying existing solutions and finding ways to improve upon them.
+
+Throughout this project, we learned the importance of problem-solving, teamwork, and adaptability. We realized that developing a successful project is not only about coming up with creative ideas but also about identifying existing solutions and finding ways to improve upon them.
 
 We also gained practical experience using Replit, RunPod, and GitHub, which helped us better understand the development workflow and the importance of collaboration in building a project.
 
