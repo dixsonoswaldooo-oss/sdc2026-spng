@@ -21,7 +21,7 @@
 | ----------------- | ---------------------------------------------- |
 | GitHub Repository | https://github.com/dixsonoswaldooo-oss/sdc2026-spng |
 | Live Demo         | https://sdc-2026-spng.replit.app/              |
-| RunPod Endpoint   | https://api.runpod.ai/v2/your-endpoint-id      |
+| RunPod Endpoint   | https://api.runpod.ai/v2/u0u1ewu0meordn        |
 | Slide Deck        | https://example.com/slides                     |
 | Demo Video        | https://example.com/demo-video                 |
 
