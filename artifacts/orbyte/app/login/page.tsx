@@ -3,9 +3,11 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
 import { DemoSpace } from '@/components/DemoSpace';
+import { LangSwitch } from '@/components/LangProvider';
 import { Reveal } from '@/components/Reveal';
 import { accountsOf, COMPANY } from '@/lib/seed';
 import { useStore } from '@/lib/store';
+import { rt, t, td, tx } from '@/lib/i18n';
 
 const GUIDE_KEY = 'esg-guide';
 
@@ -39,7 +41,7 @@ export default function LoginPage() {
   const submit = (event: FormEvent) => {
     event.preventDefault();
     const found = ACCOUNTS.find((a) => a.email.toLowerCase() === email.trim().toLowerCase());
-    if (!found || password !== 'demo') return setError('Unknown email or wrong password. Use a demo account below (password: demo).');
+    if (!found || password !== 'demo') return setError(t('Unknown email or wrong password. Use a demo account below (password: demo).'));
     go(found.id);
   };
 
@@ -51,54 +53,57 @@ export default function LoginPage() {
             <img src="/assets/orbyte-icon.png" alt="" className="chop-mark" />
             Orbyte
           </a>
-          <a href="/" className="btn btn-line">← Back to Orbyte</a>
+          <div className="flex items-center gap-3">
+            <LangSwitch />
+            <a href="/" className="btn btn-line hidden sm:inline-flex">{t('← Back to Orbyte')}</a>
+          </div>
         </div>
       </header>
 
       <main className="wrap grid w-full flex-1 items-start gap-10 py-14 lg:grid-cols-[1fr_1.05fr] lg:py-20">
         <Reveal>
-          <span className="eyebrow">Smart feature on Orbyte</span>
+          <span className="eyebrow">{t('Smart feature on Orbyte')}</span>
           <h1 className="mt-3 !text-[clamp(2.4rem,4.6vw,3.8rem)]">e-Salary Guard.</h1>
-          <p className="lede mt-5 !max-w-[34ch]">Take-home pay worked out from attendance, explained to every employee before payday, not after.</p>
+          <p className="lede mt-5 !max-w-[34ch]">{t('Take-home pay worked out from attendance, explained to every employee before payday, not after.')}</p>
           <ul className="plain mt-8 max-w-md">
-            <li>Deductions calculated from attendance, lateness and leave</li>
-            <li>WhatsApp alert the moment a deduction appears</li>
-            <li>AI reads leave reasons; HR has the final say</li>
-            <li>One-click payroll with a full activity log</li>
+            <li>{t('Deductions calculated from attendance, lateness and leave')}</li>
+            <li>{t('WhatsApp alert the moment a deduction appears')}</li>
+            <li>{t('AI reads leave reasons; HR has the final say')}</li>
+            <li>{t('One-click payroll with a full activity log')}</li>
           </ul>
           {guide && (
             <section aria-labelledby="guide-title" className="mt-8 max-w-md rounded-[var(--radius)] bg-white p-5 shadow-[0_1px_2px_rgba(11,30,77,0.08)]">
               <div className="flex items-start justify-between gap-3">
-                <h2 id="guide-title" className="!text-[1.1rem]">New here? Try it in 3 steps</h2>
-                <button type="button" className="btn btn-ghost !px-3 !py-1 text-xs" onClick={hideGuide}>Hide</button>
+                <h2 id="guide-title" className="!text-[1.1rem]">{t('New here? Try it in 3 steps')}</h2>
+                <button type="button" className="btn btn-ghost !px-3 !py-1 text-xs" onClick={hideGuide}>{t('Hide')}</button>
               </div>
               <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm text-text-70">
-                <li>Sign in as <strong>{ACCOUNTS[0].name}</strong> (HR) and use <strong>Try it live</strong> on the dashboard.</li>
-                <li>Sign in as an employee and <strong>ask for leave</strong> under Requests.</li>
-                <li>Go back to HR, <strong>approve</strong> it in Approvals, and watch the pay change.</li>
+                <li>{rt('Sign in as {name} (HR) and use {tool} on the dashboard.', { name: <strong>{ACCOUNTS[0].name}</strong>, tool: <strong>{t('Try it live')}</strong> })}</li>
+                <li>{rt('Sign in as an employee and {ask} under Requests.', { ask: <strong>{t('ask for leave')}</strong> })}</li>
+                <li>{rt('Go back to HR, {approve} it in Approvals, and watch the pay change.', { approve: <strong>{t('approve')}</strong> })}</li>
               </ol>
             </section>
           )}
         </Reveal>
 
         <Reveal delay={120} className="rounded-[var(--radius-lg)] bg-white p-7 shadow-[0_30px_70px_-30px_rgba(11,11,12,0.18)] sm:p-9">
-          <h2 className="!text-[1.6rem]">Sign in</h2>
-          <p className="small mt-1">{COMPANY} · demo workspace</p>
+          <h2 className="!text-[1.6rem]">{t('Sign in')}</h2>
+          <p className="small mt-1">{COMPANY} · {t('demo workspace')}</p>
           <form onSubmit={submit} className="mt-6">
             <div className="field">
-              <label htmlFor="email">Work email</label>
+              <label htmlFor="email">{t('Work email')}</label>
               <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="username" required />
             </div>
             <div className="field">
-              <label htmlFor="password">Password</label>
+              <label htmlFor="password">{t('Password')}</label>
               <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required />
             </div>
-            {error && <p role="alert" className="mb-4 text-sm font-medium text-danger">{error}</p>}
-            <button type="submit" className="btn btn-primary w-full justify-center !py-3">Sign in</button>
+            {error && <p role="alert" className="mb-4 text-sm font-medium text-danger">{tx(error)}</p>}
+            <button type="submit" className="btn btn-primary w-full justify-center !py-3">{t('Sign in')}</button>
           </form>
 
           <div className="mt-8">
-            <p className="text-xs font-semibold text-muted">Demo accounts · password <code>demo</code> · one click to sign in</p>
+            <p className="text-xs font-semibold text-muted">{rt('Demo accounts · password {pw} · one click to sign in', { pw: <code>demo</code> })}</p>
             <ul className="mt-3 grid gap-2 sm:grid-cols-2">
               {ACCOUNTS.map((a) => {
                 const emp = data.employees.find((e) => e.id === a.employeeId);
@@ -111,9 +116,9 @@ export default function LoginPage() {
                     >
                       <span className="flex items-center justify-between gap-2">
                         <span className="text-sm font-semibold text-navy">{a.name}</span>
-                        <span className={`rounded-full px-2 py-0.5 text-[0.7rem] font-semibold ${a.role === 'HR' ? 'bg-royal text-white' : 'bg-royal/10 text-royal'}`}>{a.role === 'HR' ? 'HR' : 'Employee'}</span>
+                        <span className={`rounded-full px-2 py-0.5 text-[0.7rem] font-semibold ${a.role === 'HR' ? 'bg-royal text-white' : 'bg-royal/10 text-royal'}`}>{t(a.role === 'HR' ? 'HR' : 'Employee')}</span>
                       </span>
-                      <span className="mt-0.5 block text-xs text-muted">{emp ? emp.position : 'HR Manager'} · {a.email}</span>
+                      <span className="mt-0.5 block text-xs text-muted">{td(emp ? emp.position : 'HR Manager')} · {a.email}</span>
                     </button>
                   </li>
                 );

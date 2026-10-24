@@ -311,3 +311,17 @@ laptop and an employee on a phone see the same requests and decisions within a f
 - **Payroll** shows only the current month; **Payment history** has a month picker (any month of the year, one at a time).
 - **Activity log**: plain sentences ("who · what · whom"), four filters, details on demand, 50 at a time.
 - Checks: 66 automatic tests; browser tests in both modes: new HR features 17, demo 22, revision 21, two devices 9, slow AI 4.
+
+## Three languages: English, Bahasa Melayu, 简体中文 (24 Oct 2026)
+
+- A switch (EN · BM · 中文) on the sign-in page and in the app header. The choice is remembered in this browser; English
+  is the default. Switching never reloads or resets the demo data.
+- Every screen text is in `lib/i18n-dict.ts` as `[English, Melayu, 中文]`, used through `t()` / `tn()` (plural) / `rt()`
+  (sentences with bold words or links). A missing entry shows English.
+- Text the app generates (WhatsApp pay-cut alerts, overtime offers, activity log, HR updates, error messages) is still
+  stored in English and translated when shown (`tx()`), so older data is translated too. Names, notes, leave reasons and the
+  AI's own explanation stay as written. Dates follow the language (14 Okt 2026, 2026年10月14日).
+- The orbyte.my home page copy at "/" is not translated (Orbyte's own text). Department and the demo's position names are
+  translated; positions HR types for new workers stay as typed.
+- Checks: `lib/i18n.test.ts` (every screen text has BM and 中文, same placeholders, every generated text has a template,
+  stored text stays English, free text is never changed); a browser audit of every page in BM and 中文.

@@ -91,6 +91,12 @@ the table with `npx drizzle-kit push --dialect postgresql --schema ./src/schema/
   `engine.addEmployee`; they start on `startDate` and are never absent before it). The server resolves the session cookie
   against the current space's accounts, so never use the static `ACCOUNTS` list outside tests.
 
+- Languages (EN / BM / 中文): never hard-code screen text. Wrap it in `t('English text')` (`tn` for plurals, `rt` for
+  sentences with JSX parts) and add `[English, Melayu, 中文]` to `lib/i18n-dict.ts` (SCREEN). Stored text stays English;
+  for a new generated message/log/error add its template to GENERATED and show it with `tx()`. People's data (positions,
+  departments) goes through `td()` (dictionary only). Engine/payroll date helpers must pass `'en'`. `lib/i18n.test.ts` fails
+  on a missing translation.
+
 ## 5. Rules for AI content
 
 - Every AI label shows its source ("AI suggestion" / "Keyword check" / "Set by HR"); low confidence shows "Please check".

@@ -9,6 +9,8 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { DEMO_MONTH } from '@/lib/seed';
 import { monthName } from '@/lib/format';
 import { DemoSpace } from './DemoSpace';
+import { LangSwitch } from './LangProvider';
+import { t, tx } from '@/lib/i18n';
 import { Icon, type IconName } from './Icon';
 import { ConfirmDialog, type Confirm } from './ui';
 import { useStore } from '@/lib/store';
@@ -28,6 +30,13 @@ const NAV: Record<Role, Item[]> = {
     ['/employee/offers', 'Overtime', 'Overtime', 'clock', true], ['/employee/inbox', 'Messages', 'Messages', 'chat', true],
     ['/employee/payslips', 'Payslips', 'Payslips', 'receipt', true],
   ],
+};
+
+/** Phone tab bar: a shorter word where a language has one ("tab:Overtime" → BM "OT"), else the normal label. */
+const tabLabel = (short: string) => {
+  const key = `tab:${short}`;
+  const word = t(key);
+  return word === key ? t(short) : word;
 };
 
 /** Copies each table's column headers into its cells (data-label), for the card layout on phones. */
@@ -80,7 +89,7 @@ export function AppShell({ role, children }: { role: Role; children: ReactNode }
     return () => window.removeEventListener('keydown', onKey);
   }, [more]);
 
-  if (!allowed) return <div className="grid min-h-screen place-items-center text-sm text-muted">Checking access…</div>;
+  if (!allowed) return <div className="grid min-h-screen place-items-center text-sm text-muted">{t('Checking access…')}</div>;
   const home = role === 'HR' ? '/hr' : '/employee';
   const isActive = (href: string) => (href === home ? path === home : path.startsWith(href));
   // Everything waiting for HR: requests, cancellation requests and unread updates (withdrawn or edited requests).
@@ -88,7 +97,7 @@ export function AppShell({ role, children }: { role: Role; children: ReactNode }
     + data.overtime.filter((o) => o.status === 'REQUESTED' || o.cancelRequestedAt).length
     + data.notifications.filter((n) => !n.read).length;
   const badge = (href: string, className: string) => href === '/hr/approvals' && forHr > 0 && (
-    <span className={`rounded-full bg-royal font-semibold text-white ${className}`} aria-label={`${forHr} waiting`}>{forHr}</span>
+    <span className={`rounded-full bg-royal font-semibold text-white ${className}`} aria-label={t('{n} waiting', { n: forHr })}>{forHr}</span>
   );
   const tabs = NAV[role].filter((i) => i[4]);
   const extra = NAV[role].filter((i) => !i[4]);
@@ -99,18 +108,19 @@ export function AppShell({ role, children }: { role: Role; children: ReactNode }
       <header className={`site-header ${scrolled ? 'scrolled' : ''}`}>
         <div className="wrap">
           <div className="flex min-w-0 items-center gap-3">
-            <a href="/" className="brand" title="Back to orbyte.my home">
+            <a href="/" className="brand" title={t('Back to orbyte.my home')}>
               <img src="/assets/orbyte-icon.png" alt="" className="chop-mark" />
               Orbyte
             </a>
             <span className="hidden h-5 w-px bg-line sm:block" aria-hidden="true" />
             <Link href={home} className="hidden truncate text-[0.95rem] font-semibold text-royal no-underline sm:block">e-Salary Guard</Link>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="text-right leading-tight">
-              <p className="max-w-[9rem] truncate text-[0.85rem] font-semibold text-navy sm:max-w-none">{account.name}</p>
-              <p className="text-xs text-muted">{role === 'HR' ? 'HR' : 'Employee'} · {monthName(DEMO_MONTH)}</p>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="hidden text-right leading-tight sm:block">
+              <p className="truncate text-[0.85rem] font-semibold text-navy">{account.name}</p>
+              <p className="text-xs text-muted">{t(role === 'HR' ? 'HR' : 'Employee')} · {monthName(DEMO_MONTH)}</p>
             </div>
+            <LangSwitch />
             <button
               type="button"
               className="btn btn-ghost !px-4 !py-2"
@@ -119,7 +129,7 @@ export function AppShell({ role, children }: { role: Role; children: ReactNode }
                 router.replace('/login');
               }}
             >
-              Sign out
+              {t('Sign out')}
             </button>
           </div>
         </div>
@@ -132,7 +142,7 @@ export function AppShell({ role, children }: { role: Role; children: ReactNode }
                   aria-current={isActive(href) ? 'page' : undefined}
                   className={`-mb-px inline-block border-b-2 py-3 text-[0.85rem] no-underline transition-colors ${isActive(href) ? 'border-royal font-semibold text-navy' : 'border-transparent text-text-70 hover:text-navy'}`}
                 >
-                  {label}
+                  {t(label)}
                   {badge(href, 'ml-1.5 px-1.5 py-px text-[0.7rem]')}
                 </Link>
               </li>
@@ -144,8 +154,8 @@ export function AppShell({ role, children }: { role: Role; children: ReactNode }
       <main className="wrap w-full flex-1 py-7 sm:py-14">
         {serverError && (
           <p role="alert" className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-sm)] bg-danger/10 px-4 py-3 text-sm font-medium text-danger">
-            {serverError}
-            <button type="button" className="btn btn-ghost !px-4 !py-1.5" onClick={clearServerError}>Dismiss</button>
+            {tx(serverError)}
+            <button type="button" className="btn btn-ghost !px-4 !py-1.5" onClick={clearServerError}>{t('Dismiss')}</button>
           </p>
         )}
         {children}
@@ -153,23 +163,23 @@ export function AppShell({ role, children }: { role: Role; children: ReactNode }
 
       <footer className="site-footer !py-8">
         <div className="wrap footer-bottom !border-t-0 !pt-0">
-          <span>e-Salary Guard · a smart feature on Orbyte · demo with synthetic data</span>
-          <span>WhatsApp and payments are simulated. No real money is moved.</span>
+          <span>{t('e-Salary Guard · a smart feature on Orbyte · demo with synthetic data')}</span>
+          <span>{t('WhatsApp and payments are simulated. No real money is moved.')}</span>
           <DemoSpace compact />
           {role === 'HR' && (
             <button
               type="button"
               className="btn-line btn cursor-pointer"
               onClick={() => setConfirm({
-                title: 'Reset all demo data?',
+                title: t('Reset all demo data?'),
                 body: mode === 'server'
-                  ? `This resets demo space ${space} (and every device that joined it): every request, decision, payment and log goes back to the start.`
-                  : 'Every change made in this browser goes back to the start.',
-                confirmLabel: 'Reset demo data',
+                  ? t('This resets demo space {space} (and every device that joined it): every request, decision, payment and log goes back to the start.', { space: space ?? '' })
+                  : t('Every change made in this browser goes back to the start.'),
+                confirmLabel: t('Reset demo data'),
                 onConfirm: resetDemo,
               })}
             >
-              Reset demo data
+              {t('Reset demo data')}
             </button>
           )}
         </div>
@@ -180,13 +190,13 @@ export function AppShell({ role, children }: { role: Role; children: ReactNode }
         <div className="fixed inset-0 z-40 bg-navy-deep/40 sm:hidden" onClick={() => setMore(false)} aria-hidden="true" />
       )}
       {more && (
-        <div id="more-pages" role="dialog" aria-label="More pages" className="fixed inset-x-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-50 rounded-[var(--radius)] bg-white p-2 shadow-[0_30px_70px_-20px_rgba(11,11,12,0.35)] sm:hidden">
+        <div id="more-pages" role="dialog" aria-label={t('More pages')} className="fixed inset-x-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-50 rounded-[var(--radius)] bg-white p-2 shadow-[0_30px_70px_-20px_rgba(11,11,12,0.35)] sm:hidden">
           {extra.map(([href, label, , icon]) => (
             <Link
               key={href} href={href} aria-current={isActive(href) ? 'page' : undefined}
               className={`flex min-h-12 items-center gap-3 rounded-[var(--radius-sm)] px-4 text-[0.95rem] no-underline ${isActive(href) ? 'bg-royal/10 font-semibold text-royal' : 'text-navy'}`}
             >
-              <Icon name={icon} />{label}
+              <Icon name={icon} />{t(label)}
             </Link>
           ))}
         </div>
@@ -200,7 +210,7 @@ export function AppShell({ role, children }: { role: Role; children: ReactNode }
                 className={`relative flex min-h-[4.25rem] flex-col items-center justify-center gap-1 text-[0.7rem] no-underline ${isActive(href) ? 'font-semibold text-royal' : 'text-text-70'}`}
               >
                 <Icon name={icon} />
-                {short}
+                {tabLabel(short)}
                 {badge(href, 'absolute top-2 left-1/2 ml-2 min-w-[1.1rem] px-1 text-center text-[0.65rem] leading-[1.1rem]')}
               </Link>
             </li>
@@ -212,7 +222,7 @@ export function AppShell({ role, children }: { role: Role; children: ReactNode }
                 className={`flex min-h-[4.25rem] w-full flex-col items-center justify-center gap-1 text-[0.7rem] ${more || extraActive ? 'font-semibold text-royal' : 'text-text-70'}`}
               >
                 <Icon name="more" />
-                More
+                {t('More')}
               </button>
             </li>
           )}

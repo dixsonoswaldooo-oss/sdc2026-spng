@@ -62,7 +62,7 @@ export function computePayroll({ employee, month, config, attendance, leaves, ov
       if (leave.label === 'DIPOTONG') {
         events.push({
           key: `LEAVE:${day}`, date: day, kind: 'LEAVE', amount: toSen(dailyWage * (config.leaveDeductionPct / 100)),
-          explanation: `your leave on ${fmtDate(day, { year: false })} is unpaid (the reason was judged non-essential)`,
+          explanation: `your leave on ${fmtDate(day, { year: false }, 'en')} is unpaid (the reason was judged non-essential)`,
         });
       }
       continue;
@@ -74,7 +74,7 @@ export function computePayroll({ employee, month, config, attendance, leaves, ov
     if (!record?.clockIn) {
       events.push({
         key: `ABSENT:${day}`, date: day, kind: 'ABSENT', amount: toSen(dailyWage * (config.absentDeductionPct / 100)),
-        explanation: `you were absent without approved leave on ${fmtDate(day, { year: false })}`,
+        explanation: `you were absent without approved leave on ${fmtDate(day, { year: false }, 'en')}`,
       });
       continue;
     }
@@ -82,7 +82,7 @@ export function computePayroll({ employee, month, config, attendance, leaves, ov
     if (excess > 0) {
       events.push({
         key: `LATE:${day}`, date: day, kind: 'LATE', amount: toSen(excess * config.lateRatePerMinute),
-        explanation: `you were ${record.lateMinutes} minutes late on ${fmtDate(day, { year: false })} (tolerance ${config.lateToleranceMinutes} minutes)`,
+        explanation: `you were ${record.lateMinutes} minutes late on ${fmtDate(day, { year: false }, 'en')} (tolerance ${config.lateToleranceMinutes} minutes)`,
       });
     }
   }
@@ -113,7 +113,7 @@ export function deductionMessage(name: string, monthLabel: string, event: Deduct
   const first = name.split(' ')[0];
   const net = ` Your estimated take-home pay is now ${money(netPay)}. Please contact HR if anything is wrong.`;
   if (event.amount === 0) {
-    return `Update: Hi ${first}, the ${KIND_WORDS[event.kind]} deduction for ${fmtDate(event.date, { year: false })} on your ${monthLabel} salary has been removed.${net}`;
+    return `Update: Hi ${first}, the ${KIND_WORDS[event.kind]} deduction for ${fmtDate(event.date, { year: false }, 'en')} on your ${monthLabel} salary has been removed.${net}`;
   }
   const lead = update ? `Update: Hi ${first}, a deduction has changed. Your` : `Hi ${first}, your`;
   return `${lead} ${monthLabel} salary has a deduction of ${money(event.amount)} because ${event.explanation}.${net}`;

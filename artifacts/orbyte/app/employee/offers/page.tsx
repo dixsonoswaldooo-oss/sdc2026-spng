@@ -7,6 +7,7 @@ import { Badge, ConfirmDialog, Empty, ErrorNote, PageHead, Panel, type Confirm }
 import { overtimeCancelBlock, overtimeRate } from '@/lib/engine';
 import { date, money } from '@/lib/format';
 import { useMe } from '@/lib/useMe';
+import { t } from '@/lib/i18n';
 
 export default function MyOvertime() {
   const { data, me, moveOvertime, requestOvertimeCancellation } = useMe();
@@ -20,42 +21,42 @@ export default function MyOvertime() {
 
   return (
     <>
-      <PageHead eyebrow="Overtime" title="Offers and approved overtime">
-        Answer HR&apos;s overtime offers. After you work the hours, mark them done and they are added to your pay.
+      <PageHead eyebrow={t('Overtime')} title={t('Offers and approved overtime')}>
+        {t("Answer HR's overtime offers. After you work the hours, mark them done and they are added to your pay.")}
       </PageHead>
       <ErrorNote message={error} />
       <Panel>
-        {mine.length === 0 ? <Empty>No overtime yet. Want extra hours? <Link href="/employee/requests" className="font-medium text-royal">Ask HR under Requests →</Link></Empty> : (
+        {mine.length === 0 ? <Empty>{t('No overtime yet. Want extra hours?')} <Link href="/employee/requests" className="font-medium text-royal">{t('Ask HR under Requests →')}</Link></Empty> : (
           <ul className="space-y-4">
             {mine.map((o) => (
               <li key={o.id} className="flex flex-wrap items-center justify-between gap-4 rounded-[var(--radius)] bg-gray p-5">
                 <div>
                   <p className="flex flex-wrap items-center gap-2 font-semibold">
-                    {o.hours} h on {date(o.date)}
+                    {t('{h} h on {date}', { h: o.hours, date: date(o.date) })}
                     <StatusBadges item={o} words={OT_STATUS[o.status]} />
-                    <Badge tone="muted">{o.origin === 'HR' ? 'Offered by HR' : 'My request'}</Badge>
+                    <Badge tone="muted">{t(o.origin === 'HR' ? 'Offered by HR' : 'My request')}</Badge>
                   </p>
                   <p className="mt-1 text-sm text-text-70">{o.note}</p>
-                  <p className="mt-1 text-xs text-muted">Worth {money(o.hours * overtimeRate(data, me))} when done</p>
+                  <p className="mt-1 text-xs text-muted">{t('Worth {amount} when done', { amount: money(o.hours * overtimeRate(data, me)) })}</p>
                 </div>
                 <div className="flex flex-wrap items-start gap-2">
                   {o.status === 'OFFERED' && (
                     <>
-                      <button type="button" className="btn btn-ghost" onClick={() => act(() => moveOvertime(o.id, 'DECLINED'))}>Decline</button>
-                      <button type="button" className="btn btn-primary" onClick={() => act(() => moveOvertime(o.id, 'ACCEPTED'))}>Accept</button>
+                      <button type="button" className="btn btn-ghost" onClick={() => act(() => moveOvertime(o.id, 'DECLINED'))}>{t('Decline')}</button>
+                      <button type="button" className="btn btn-primary" onClick={() => act(() => moveOvertime(o.id, 'ACCEPTED'))}>{t('Accept')}</button>
                     </>
                   )}
                   {(o.status === 'ACCEPTED' || o.status === 'APPROVED') && (
-                    o.cancelRequestedAt ? <span className="text-xs text-muted">Waiting for HR to decide the cancellation</span> : (
+                    o.cancelRequestedAt ? <span className="text-xs text-muted">{t('Waiting for HR to decide the cancellation')}</span> : (
                       <>
                         <GuardedButton
-                          label="Request cancellation" blocked={overtimeCancelBlock(data, o)}
+                          label={t('Request cancellation')} blocked={overtimeCancelBlock(data, o)}
                           onClick={() => setConfirm({
-                            title: 'Ask HR to cancel this overtime?', body: 'Until HR decides, the overtime stays on.', confirmLabel: 'Send to HR',
+                            title: t('Ask HR to cancel this overtime?'), body: t('Until HR decides, the overtime stays on.'), confirmLabel: t('Send to HR'),
                             onConfirm: () => act(() => requestOvertimeCancellation(o.id)),
                           })}
                         />
-                        <GuardedButton label="Mark as done" primary blocked={null} onClick={() => act(() => moveOvertime(o.id, 'COMPLETED'))} />
+                        <GuardedButton label={t('Mark as done')} primary blocked={null} onClick={() => act(() => moveOvertime(o.id, 'COMPLETED'))} />
                       </>
                     )
                   )}

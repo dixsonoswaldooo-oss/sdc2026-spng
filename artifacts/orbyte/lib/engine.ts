@@ -94,7 +94,7 @@ export function payrollFor(d: Data, employeeId: string, month: Month): PayrollBr
 /** Recalculate the current month; log changed take-home pay; WhatsApp new, changed or removed deductions. */
 export function reconcile(d: Data, ctx: Ctx): Data {
   if (isPaid(d, DEMO_MONTH)) return d; // a paid month is locked
-  const label = monthName(DEMO_MONTH);
+  const label = monthName(DEMO_MONTH, 'en');
   for (const e of d.employees) {
     const p = payrollFor(d, e.id, DEMO_MONTH);
     const before = d.lastNet[e.id];
@@ -169,12 +169,12 @@ export function migrate(saved: Data, ctx: Ctx): Data {
 /** Why a period can't change ("This period has been paid"), or null. Shown next to disabled buttons. */
 export function paidReason(d: Data, dates: string[]): string | null {
   const paid = dates.find((day) => isPaid(d, day.slice(0, 7)));
-  return paid ? `This period has been paid (${monthName(paid.slice(0, 7))})` : null;
+  return paid ? `This period has been paid (${monthName(paid.slice(0, 7), 'en')})` : null;
 }
 
 function assertOpen(d: Data, dates: string[]): void {
   const paid = dates.find((day) => isPaid(d, day.slice(0, 7)));
-  if (paid) throw new Error(`${monthName(paid.slice(0, 7))} has already been paid, so it is locked.`);
+  if (paid) throw new Error(`${monthName(paid.slice(0, 7), 'en')} has already been paid, so it is locked.`);
 }
 
 // ---------- HR controls ----------
@@ -595,7 +595,7 @@ export function draftRun(d: Data, month: Month): PaymentRun | null {
 }
 
 export function payMonth(data: Data, ctx: Ctx, month: Month): Data {
-  if (isPaid(data, month)) throw new Error(`${monthName(month)} has already been paid.`);
+  if (isPaid(data, month)) throw new Error(`${monthName(month, 'en')} has already been paid.`);
   const d = structuredClone(data);
   const yyyymm = month.replace('-', '');
   const lines: PaymentLine[] = d.employees.map((e, i) => ({
@@ -603,7 +603,7 @@ export function payMonth(data: Data, ctx: Ctx, month: Month): Data {
   }));
   const total = toSen(lines.reduce((t, l) => t + l.netPay, 0));
   d.payments.unshift({ month, paidAt: ctx.now, paidBy: ctx.actor.replace(/^HR: /, ''), total, lines });
-  log(d, ctx, 'PAYMENT', `Paid ${monthName(month)} payroll (simulated)`, `${lines.length} employees`,
+  log(d, ctx, 'PAYMENT', `Paid ${monthName(month, 'en')} payroll (simulated)`, `${lines.length} employees`,
     `${money(total)} · ${lines[0].reference} to ${lines[lines.length - 1].reference}`);
   return d;
 }

@@ -6,6 +6,7 @@ import { Conversation } from '@/components/Conversation';
 import { Badge, PageHead, Panel } from '@/components/ui';
 import { dateTime } from '@/lib/format';
 import { useStore } from '@/lib/store';
+import { t, td, tx } from '@/lib/i18n';
 
 export default function Messages() {
   const { data } = useStore();
@@ -21,18 +22,18 @@ export default function Messages() {
 
   return (
     <>
-      <PageHead eyebrow="Messages" title="Messages with workers">
-        Write to one worker and read their answers. Pay cut alerts and overtime offers sent automatically appear in the same conversation. Simulated WhatsApp: nothing leaves this app.
+      <PageHead eyebrow={t('Messages')} title={t('Messages with workers')}>
+        {t('Write to one worker and read their answers. Pay cut alerts and overtime offers sent automatically appear in the same conversation. Simulated WhatsApp: nothing leaves this app.')}
       </PageHead>
       <div className="grid gap-6 lg:grid-cols-[18rem_1fr]">
         <div>
           <div className="field lg:hidden">
-            <label htmlFor="who">Worker</label>
+            <label htmlFor="who">{t('Worker')}</label>
             <select id="who" value={who} onChange={(e) => setWho(e.target.value)}>
               {people.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
             </select>
           </div>
-          <ul className="hidden space-y-1 lg:block" aria-label="Workers">
+          <ul className="hidden space-y-1 lg:block" aria-label={t('Workers')}>
             {people.map((e) => {
               const last = latest(e.id);
               return (
@@ -43,9 +44,9 @@ export default function Messages() {
                   >
                     <span className="flex items-center justify-between gap-2">
                       <span className="text-sm font-semibold text-navy">{e.name}</span>
-                      {last?.kind === 'REPLY' && <Badge tone="royal">Replied</Badge>}
+                      {last?.kind === 'REPLY' && <Badge tone="royal">{t('Replied')}</Badge>}
                     </span>
-                    <span className="mt-0.5 block truncate text-xs text-muted">{last ? `${dateTime(last.at)} · ${last.text}` : e.position}</span>
+                    <span className="mt-0.5 block truncate text-xs text-muted">{last ? `${dateTime(last.at)} · ${last.kind === 'REPLY' || last.kind === 'HR_MESSAGE' ? last.text : tx(last.text)}` : td(e.position)}</span>
                   </button>
                 </li>
               );
@@ -55,7 +56,7 @@ export default function Messages() {
         {worker && (
           <Panel>
             <h2>{worker.name}</h2>
-            <p className="mt-1 text-sm text-muted">{worker.position} · {worker.division} · {worker.whatsapp}</p>
+            <p className="mt-1 text-sm text-muted">{td(worker.position)} · {td(worker.division)} · {worker.whatsapp}</p>
             <div className="mt-5"><Conversation key={worker.id} employeeId={worker.id} viewer="HR" /></div>
           </Panel>
         )}

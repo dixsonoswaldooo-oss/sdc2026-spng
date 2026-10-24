@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { LangProvider } from '@/components/LangProvider';
 import { StoreProvider } from '@/lib/store';
 import './globals.css';
 
@@ -18,7 +19,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300..800;1,300..700&display=swap" rel="stylesheet" />
       </head>
       <body>
-        <StoreProvider>{children}</StoreProvider>
+        <StoreProvider><LangProvider>{children}</LangProvider></StoreProvider>
       </body>
     </html>
   );

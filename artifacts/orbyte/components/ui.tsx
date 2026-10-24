@@ -2,6 +2,7 @@
 // Small building blocks in Orbyte's style (gray rounded cells, royal accents, pill buttons).
 import { useEffect, useRef, type ReactNode } from 'react';
 import { money } from '@/lib/format';
+import { t, tx } from '@/lib/i18n';
 import { Reveal } from './Reveal';
 
 export function PageHead({ eyebrow, title, children, action }: { eyebrow: string; title: string; children?: ReactNode; action?: ReactNode }) {
@@ -64,7 +65,7 @@ export function Empty({ children }: { children: ReactNode }) {
 
 export function ErrorNote({ message }: { message: string | null }) {
   if (!message) return null;
-  return <p role="alert" className="mt-3 text-sm font-medium text-danger">{message}</p>;
+  return <p role="alert" className="mt-3 text-sm font-medium text-danger">{tx(message)}</p>;
 }
 
 /** The one place an action reports back: its error, or else its success, right under the action. */
@@ -112,7 +113,7 @@ export function ConfirmDialog({ confirm, onClose }: { confirm: Confirm | null; o
     <Modal open={!!confirm} title={confirm?.title ?? ''} onClose={onClose}>
       <div className="text-sm text-text-70">{confirm?.body}</div>
       <div className="mt-6 flex justify-end gap-3">
-        <button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
+        <button type="button" className="btn btn-ghost" onClick={onClose}>{t('Cancel')}</button>
         <button type="button" className="btn btn-primary" onClick={() => { confirm?.onConfirm(); onClose(); }}>{confirm?.confirmLabel}</button>
       </div>
     </Modal>

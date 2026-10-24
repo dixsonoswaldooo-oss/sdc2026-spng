@@ -9,6 +9,7 @@ import { lastWorkedDay, paidReason, payrollFor } from '@/lib/engine';
 import { date } from '@/lib/format';
 import { DEMO_MONTH } from '@/lib/seed';
 import { useStore } from '@/lib/store';
+import { t, tx } from '@/lib/i18n';
 
 interface Result {
   employeeId: string;
@@ -23,7 +24,7 @@ export function SimulateEvent() {
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState<string | null>(null);
   const day = lastWorkedDay(data, who);
-  const blocked = !day ? 'No working day of this month has passed yet' : paidReason(data, [day]);
+  const blocked = !day ? t('No working day of this month has passed yet') : paidReason(data, [day]);
   const name = (id: string) => data.employees.find((e) => e.id === id)!.name;
 
   const run = (kind: 'LATE' | 'ABSENT') => {
@@ -55,37 +56,36 @@ export function SimulateEvent() {
 
   return (
     <Panel className="mt-8">
-      <h2>Try it live: simulate an event</h2>
+      <h2>{t('Try it live: simulate an event')}</h2>
       <p className="mt-2 max-w-2xl text-sm text-text-70">
-        Pick an employee and make something happen on {day ? date(day, { year: false }) : 'the last working day'}, the last working day
-        that has passed. Their deduction, WhatsApp alert and take-home pay update at once.
+        {t('Pick an employee and make something happen on {day}, the last working day that has passed. Their deduction, WhatsApp alert and take-home pay update at once.', { day: day ? date(day, { year: false }) : t('the last working day') })}
       </p>
       <div className="mt-4 flex flex-wrap items-end gap-3">
         <div className="field !mb-0 min-w-[12rem] flex-1 sm:flex-none">
-          <label htmlFor="sim-who">Employee</label>
+          <label htmlFor="sim-who">{t('Employee')}</label>
           <select id="sim-who" value={who} onChange={(e) => { setWho(e.target.value); setResult(null); }}>
             {data.employees.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
           </select>
         </div>
-        <GuardedButton label="25 min late" primary blocked={blocked} onClick={() => run('LATE')} />
-        <GuardedButton label="Didn't come in" blocked={blocked} onClick={() => run('ABSENT')} />
+        <GuardedButton label={t('25 min late')} primary blocked={blocked} onClick={() => run('LATE')} />
+        <GuardedButton label={t("Didn't come in")} blocked={blocked} onClick={() => run('ABSENT')} />
       </div>
       <ErrorNote message={error} />
 
       {result && (
         <div role="status" className="mt-5 rounded-[var(--radius)] bg-gray p-4 sm:p-5">
           <p className="text-sm font-semibold">
-            {name(result.employeeId)} · {date(result.day, { year: false })} · take-home <Money amount={result.before} /> → <Money amount={after} className={after < result.before ? 'text-danger' : ''} />
+            {name(result.employeeId)} · {date(result.day, { year: false })} · {t('take-home')} <Money amount={result.before} /> → <Money amount={after} className={after < result.before ? 'text-danger' : ''} />
           </p>
           {fresh.length ? fresh.map((m) => (
             <div key={m.id} className="mt-3 max-w-xl">
-              <span className="text-xs font-semibold text-muted">WhatsApp to {m.to} · ✓✓ Sent (simulated)</span>
-              <p className="mt-1 rounded-[18px] rounded-tl-[4px] bg-white px-4 py-3 text-sm leading-relaxed text-navy shadow-[0_1px_2px_rgba(11,30,77,0.08)]">{m.text}</p>
+              <span className="text-xs font-semibold text-muted">{t('WhatsApp to {to} · ✓✓ Sent (simulated)', { to: m.to })}</span>
+              <p className="mt-1 rounded-[18px] rounded-tl-[4px] bg-white px-4 py-3 text-sm leading-relaxed text-navy shadow-[0_1px_2px_rgba(11,30,77,0.08)]">{tx(m.text)}</p>
             </div>
-          )) : <p className="mt-2 text-sm text-muted">No new deduction: that day is covered by approved leave, or already had this deduction.</p>}
+          )) : <p className="mt-2 text-sm text-muted">{t('No new deduction: that day is covered by approved leave, or already had this deduction.')}</p>}
           <div className="mt-4 flex flex-wrap gap-3">
-            <Link href={`/hr/whatsapp?who=${result.employeeId}`} className="btn btn-ghost !px-4 !py-2">Open {name(result.employeeId).split(' ')[0]}&apos;s messages →</Link>
-            <button type="button" className="btn btn-ghost !px-4 !py-2" onClick={undo}>Undo</button>
+            <Link href={`/hr/whatsapp?who=${result.employeeId}`} className="btn btn-ghost !px-4 !py-2">{t("Open {name}'s messages →", { name: name(result.employeeId).split(' ')[0] })}</Link>
+            <button type="button" className="btn btn-ghost !px-4 !py-2" onClick={undo}>{t('Undo')}</button>
           </div>
         </div>
       )}

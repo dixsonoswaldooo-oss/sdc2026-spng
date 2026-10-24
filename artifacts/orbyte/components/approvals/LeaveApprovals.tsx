@@ -9,6 +9,7 @@ import { datesBetween } from '@/lib/payroll';
 import { useStore } from '@/lib/store';
 import type { LeaveLabel, LeaveRequest } from '@/lib/types';
 import { LEAVE_PAY_LONG } from '@/lib/words';
+import { t, tx } from '@/lib/i18n';
 
 const dates = (l: LeaveRequest) => `${date(l.startDate)}${l.endDate !== l.startDate ? ` – ${date(l.endDate)}` : ''}`;
 export const leaveWaiting = (data: Data) => data.leaves.filter((l) => l.status === 'PENDING');
@@ -26,31 +27,31 @@ export function LeaveApprovals({ part, act, ask }: { part: 'waiting' | 'cancella
           <li key={l.id} className="rounded-[var(--radius)] bg-gray p-5">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <p className="font-semibold">{name(l.employeeId)} · {LEAVE_TYPE[l.type]}</p>
-                <p className="text-sm text-muted">{dates(l)} · sent {dateTime(l.createdAt)}{l.editedAt && ` · edited ${dateTime(l.editedAt)}`}</p>
+                <p className="font-semibold">{name(l.employeeId)} · {t(LEAVE_TYPE[l.type])}</p>
+                <p className="text-sm text-muted">{dates(l)} · {t('sent {when}', { when: dateTime(l.createdAt) })}{l.editedAt && ` · ${t('edited {when}', { when: dateTime(l.editedAt) })}`}</p>
               </div>
               <span className="flex flex-wrap gap-1"><StatusBadges item={l} words={LEAVE_STATUS[l.status]} /><LabelBadge leave={l} /></span>
             </div>
-            <p className="mt-3 text-sm"><span className="text-muted">Reason: </span>“{l.reason}”</p>
+            <p className="mt-3 text-sm"><span className="text-muted">{t('Reason:')} </span>“{l.reason}”</p>
             <p className="mt-2 text-sm text-text-70">
-              <span className="text-muted">{l.labelSource === 'HR' ? 'Note: ' : l.aiPending ? 'Keyword check (AI still reading): ' : 'AI says: '}</span>{l.labelReason}
-              {l.labelSource !== 'HR' && <span className="text-muted"> · confidence {Math.round(l.confidence * 100)}%</span>}
+              <span className="text-muted">{t(l.labelSource === 'HR' ? 'Note:' : l.aiPending ? 'Keyword check (AI still reading):' : 'AI says:')} </span>{l.labelSource === 'AI' ? l.labelReason : tx(l.labelReason)}
+              {l.labelSource !== 'HR' && <span className="text-muted"> · {t('confidence {pct}%', { pct: Math.round(l.confidence * 100) })}</span>}
             </p>
             <div className="mt-4 flex flex-wrap items-center gap-3">
               <label className="flex items-center gap-2 text-sm">
-                <span className="text-muted">Pay</span>
+                <span className="text-muted">{t('Pay')}</span>
                 <select
                   value={l.label}
                   onChange={(e) => act(() => setLeaveLabel(l.id, e.target.value as LeaveLabel))}
                   className="rounded-[var(--radius-sm)] border border-line bg-white px-3 py-2 text-sm"
                 >
-                  <option value="DITOLERANSI">{LEAVE_PAY_LONG.DITOLERANSI}</option>
-                  <option value="DIPOTONG">{LEAVE_PAY_LONG.DIPOTONG}</option>
+                  <option value="DITOLERANSI">{t(LEAVE_PAY_LONG.DITOLERANSI)}</option>
+                  <option value="DIPOTONG">{t(LEAVE_PAY_LONG.DIPOTONG)}</option>
                 </select>
               </label>
               <span className="flex-1" />
-              <button type="button" className="btn btn-ghost" onClick={() => act(() => decideLeave(l.id, false))}>Reject</button>
-              <button type="button" className="btn btn-primary" onClick={() => act(() => decideLeave(l.id, true))}>Approve</button>
+              <button type="button" className="btn btn-ghost" onClick={() => act(() => decideLeave(l.id, false))}>{t('Reject')}</button>
+              <button type="button" className="btn btn-primary" onClick={() => act(() => decideLeave(l.id, true))}>{t('Approve')}</button>
             </div>
           </li>
         ))}
@@ -65,13 +66,13 @@ export function LeaveApprovals({ part, act, ask }: { part: 'waiting' | 'cancella
         {cancellations.map((l) => (
           <li key={l.id} className="flex flex-wrap items-center justify-between gap-4 rounded-[var(--radius)] bg-gray p-5">
             <div>
-              <p className="font-semibold">{name(l.employeeId)} wants to cancel approved {LEAVE_TYPE[l.type].toLowerCase()}</p>
-              <p className="mt-1 text-sm text-muted">{dates(l)} · {LABEL_WORDS[l.label].toLowerCase()} · asked {dateTime(l.cancelRequestedAt!)}</p>
+              <p className="font-semibold">{t('{name} wants to cancel approved {type}', { name: name(l.employeeId), type: t(LEAVE_TYPE[l.type]).toLowerCase() })}</p>
+              <p className="mt-1 text-sm text-muted">{dates(l)} · {t(LABEL_WORDS[l.label]).toLowerCase()} · {t('asked {when}', { when: dateTime(l.cancelRequestedAt!) })}</p>
               <p className="mt-1 text-sm text-text-70">“{l.reason}”</p>
             </div>
             <div className="flex gap-2">
-              <button type="button" className="btn btn-ghost" onClick={() => act(() => decideLeaveCancellation(l.id, false))}>Reject cancellation</button>
-              <button type="button" className="btn btn-primary" onClick={() => act(() => decideLeaveCancellation(l.id, true))}>Approve cancellation</button>
+              <button type="button" className="btn btn-ghost" onClick={() => act(() => decideLeaveCancellation(l.id, false))}>{t('Reject cancellation')}</button>
+              <button type="button" className="btn btn-primary" onClick={() => act(() => decideLeaveCancellation(l.id, true))}>{t('Approve cancellation')}</button>
             </div>
           </li>
         ))}
@@ -80,15 +81,15 @@ export function LeaveApprovals({ part, act, ask }: { part: 'waiting' | 'cancella
   }
 
   const decided = data.leaves.filter((l) => l.status !== 'PENDING');
-  if (!decided.length) return <p className="mt-3 text-sm text-muted">Nothing decided yet.</p>;
+  if (!decided.length) return <p className="mt-3 text-sm text-muted">{t('Nothing decided yet.')}</p>;
   return (
     <div className="overflow-x-auto">
       <table className={TABLE}>
-        <thead><tr>{['Employee', 'Dates', 'Reason', 'Pay', 'Status', ''].map((h) => <th key={h} className={TH}>{h}</th>)}</tr></thead>
+        <thead><tr>{['Employee', 'Dates', 'Reason', 'Pay', 'Status', ''].map((h) => <th key={h} className={TH}>{t(h)}</th>)}</tr></thead>
         <tbody>
           {decided.map((l) => (
             <tr key={l.id}>
-              <td className={TD}>{name(l.employeeId)}<span className="block text-xs text-muted">{LEAVE_TYPE[l.type]}</span></td>
+              <td className={TD}>{name(l.employeeId)}<span className="block text-xs text-muted">{t(LEAVE_TYPE[l.type])}</span></td>
               <td className={TD}>{dates(l)}</td>
               <td className={`${TD} max-w-xs`}>“{l.reason}”</td>
               <td className={TD}><LabelBadge leave={l} /></td>
@@ -99,12 +100,12 @@ export function LeaveApprovals({ part, act, ask }: { part: 'waiting' | 'cancella
               <td className={TD}>
                 {(l.status === 'APPROVED' || l.status === 'REJECTED') && (
                   <GuardedButton
-                    label="Undo decision"
+                    label={t('Undo decision')}
                     blocked={paidReason(data, datesBetween(l.startDate, l.endDate))}
                     onClick={() => ask({
-                      title: 'Undo this decision?',
-                      body: <>{name(l.employeeId)}&apos;s {LEAVE_TYPE[l.type].toLowerCase()} ({dates(l)}) goes back to the waiting list and its {LEAVE_STATUS[l.status][0].toLowerCase()} decision is cleared. Pay is recalculated and the undo is logged.</>,
-                      confirmLabel: 'Undo decision',
+                      title: t('Undo this decision?'),
+                      body: t("{name}'s {type} ({dates}) goes back to the waiting list and its {status} decision is cleared. Pay is recalculated and the undo is logged.", { name: name(l.employeeId), type: t(LEAVE_TYPE[l.type]).toLowerCase(), dates: dates(l), status: t(LEAVE_STATUS[l.status][0]).toLowerCase() }),
+                      confirmLabel: t('Undo decision'),
                       onConfirm: () => act(() => revertLeave(l.id)),
                     })}
                   />

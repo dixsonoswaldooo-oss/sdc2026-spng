@@ -8,6 +8,7 @@ import { monthName } from '@/lib/format';
 import { DEMO_MONTH } from '@/lib/seed';
 import { useStore } from '@/lib/store';
 import type { PayrollConfig } from '@/lib/types';
+import { t } from '@/lib/i18n';
 
 type Field = [keyof PayrollConfig, string, string, number];
 const GROUPS: [string, Field[]][] = [
@@ -34,7 +35,7 @@ export default function Rates() {
     setError(null);
     try {
       updateConfig(config);
-      setSaved('Rates saved. Everyone\'s pay is recalculated.');
+      setSaved(t("Rates saved. Everyone's pay is recalculated."));
     } catch (e) {
       setError((e as Error).message);
     }
@@ -42,24 +43,24 @@ export default function Rates() {
 
   return (
     <>
-      <PageHead eyebrow="Rates" title="Rates and deductions">
-        Set the amounts pay is worked out with. Saving recalculates everyone and tells them by WhatsApp if a cut changes.
+      <PageHead eyebrow={t('Rates')} title={t('Rates and deductions')}>
+        {t('Set the amounts pay is worked out with. Saving recalculates everyone and tells them by WhatsApp if a cut changes.')}
       </PageHead>
-      {isPaid(data, DEMO_MONTH) && <p className="mb-6 rounded-[var(--radius-sm)] bg-gray px-4 py-3 text-sm"><Badge tone="success">{monthName(DEMO_MONTH)} is paid</Badge> <span className="ml-2 text-muted">Its amounts are frozen; changes here apply to the next payroll.</span></p>}
+      {isPaid(data, DEMO_MONTH) && <p className="mb-6 rounded-[var(--radius-sm)] bg-gray px-4 py-3 text-sm"><Badge tone="success">{t('{month} is paid', { month: monthName(DEMO_MONTH) })}</Badge> <span className="ml-2 text-muted">{t('Its amounts are frozen; changes here apply to the next payroll.')}</span></p>}
 
       <Panel>
-        <h2>Overtime and deduction rates</h2>
+        <h2>{t('Overtime and deduction rates')}</h2>
         <div className="mt-5 grid gap-6 lg:grid-cols-3">
           {GROUPS.map(([title, fields]) => (
             <fieldset key={title} className="rounded-[var(--radius)] bg-gray p-5">
-              <legend className="sr-only">{title}</legend>
-              <h3 className="text-[1rem]">{title}</h3>
+              <legend className="sr-only">{t(title)}</legend>
+              <h3 className="text-[1rem]">{t(title)}</h3>
               <div className="mt-3">
                 {fields.map(([key, label, unit, step]) => (
                   <div key={key} className="field">
-                    <label htmlFor={key}>{label}</label>
+                    <label htmlFor={key}>{t(label)}</label>
                     <input id={key} type="number" min={0} step={step} value={config[key]} onChange={(e) => setConfig({ ...config, [key]: Number(e.target.value) })} className="tabular" />
-                    <span className="mt-1 block text-xs text-muted">{unit}</span>
+                    <span className="mt-1 block text-xs text-muted">{t(unit)}</span>
                   </div>
                 ))}
               </div>
@@ -67,16 +68,16 @@ export default function Rates() {
           ))}
         </div>
         <div className="mt-2 flex flex-wrap items-center gap-3">
-          <button type="button" className="btn btn-primary" disabled={!changed} onClick={save}>Save rates</button>
-          {changed && <button type="button" className="btn btn-ghost" onClick={() => setConfig(data.config)}>Undo</button>}
-          {changed && <span className="text-sm text-warn">Not saved yet.</span>}
+          <button type="button" className="btn btn-primary" disabled={!changed} onClick={save}>{t('Save rates')}</button>
+          {changed && <button type="button" className="btn btn-ghost" onClick={() => setConfig(data.config)}>{t('Undo')}</button>}
+          {changed && <span className="text-sm text-warn">{t('Not saved yet.')}</span>}
         </div>
         <Notice error={error} success={saved} />
       </Panel>
 
       <OvertimeRates />
 
-      <Cell className="mt-8"><p className="text-sm">Take-home pay = base + bonus + completed overtime − late, absence and unpaid-leave deductions. No tax, EPF, SOCSO or EIS in this demo.</p></Cell>
+      <Cell className="mt-8"><p className="text-sm">{t('Take-home pay = base + bonus + completed overtime − late, absence and unpaid-leave deductions. No tax, EPF, SOCSO or EIS in this demo.')}</p></Cell>
     </>
   );
 }

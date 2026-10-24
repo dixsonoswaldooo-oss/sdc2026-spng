@@ -8,9 +8,9 @@ import { payrollFor } from '@/lib/engine';
 import { dateTime, money, monthName, toSen } from '@/lib/format';
 import { DEMO_MONTH } from '@/lib/seed';
 import { useStore } from '@/lib/store';
+import { t, td, tn } from '@/lib/i18n';
 
-const CAUSE: Record<string, string> = { LATE: 'late', ABSENT: 'absent', LEAVE: 'unpaid leave' };
-const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+const CAUSE: Record<string, string> = { LATE: '{n}× late', ABSENT: '{n}× absent', LEAVE: '{n}× unpaid leave' };
 
 interface Task {
   title: string;
@@ -36,34 +36,34 @@ export default function HrDashboard() {
   const todo: Task[] = [];
   if (decide) {
     todo.push({
-      title: `${plural(decide, 'request')} to decide`, action: 'Decide now →', href: '/hr/approvals', primary: true,
-      detail: [pendingLeave && `${pendingLeave} leave`, pendingOt && `${pendingOt} overtime`, cancellations && plural(cancellations, 'cancellation')].filter(Boolean).join(' · '),
+      title: tn(decide, '{n} request to decide', '{n} requests to decide'), action: t('Decide now →'), href: '/hr/approvals', primary: true,
+      detail: [pendingLeave && t('{n} leave', { n: pendingLeave }), pendingOt && t('{n} overtime', { n: pendingOt }), cancellations && tn(cancellations, '{n} cancellation', '{n} cancellations')].filter(Boolean).join(' · '),
     });
   }
-  if (updates) todo.push({ title: `${plural(updates, 'update')} from employees`, detail: 'A request was withdrawn or changed.', action: 'Read →', href: '/hr/approvals' });
+  if (updates) todo.push({ title: tn(updates, '{n} update from employees', '{n} updates from employees'), detail: t('A request was withdrawn or changed.'), action: t('Read →'), href: '/hr/approvals' });
   if (!paid) {
     todo.push({
-      title: `${monthName(DEMO_MONTH)} is not paid yet`, action: 'Review payroll →', href: '/hr/payroll', primary: !decide,
-      detail: `${money(sum((p) => p.netPay))} for ${rows.length} employees. Check it, then pay everyone in one click.`,
+      title: t('{month} is not paid yet', { month: monthName(DEMO_MONTH) }), action: t('Review payroll →'), href: '/hr/payroll', primary: !decide,
+      detail: t('{amount} for {n} employees. Check it, then pay everyone in one click.', { amount: money(sum((p) => p.netPay)), n: rows.length }),
     });
   }
   if (deducted.length) {
     todo.push({
-      title: `${plural(deducted.length, 'employee')} with a pay cut this month`, action: 'See who →', href: '#deductions',
-      detail: `${money(sum((p) => p.totalDeductions))} in total. Each was told by WhatsApp when it happened.`,
+      title: tn(deducted.length, '{n} employee with a pay cut this month', '{n} employees with a pay cut this month'), action: t('See who →'), href: '#deductions',
+      detail: t('{amount} in total. Each was told by WhatsApp when it happened.', { amount: money(sum((p) => p.totalDeductions)) }),
     });
   }
 
   return (
     <>
-      <PageHead eyebrow={`Dashboard · ${monthName(DEMO_MONTH)}`} title="Payroll at a glance">
-        Start with what needs you. The numbers below update by themselves.
+      <PageHead eyebrow={`${t('Dashboard')} · ${monthName(DEMO_MONTH)}`} title={t('Payroll at a glance')}>
+        {t('Start with what needs you. The numbers below update by themselves.')}
       </PageHead>
 
       <Panel>
-        <h2>What needs you now</h2>
+        <h2>{t('What needs you now')}</h2>
         {todo.length === 0 ? (
-          <p className="mt-3 text-sm text-text-70">All done for now. New requests from employees will show up here.</p>
+          <p className="mt-3 text-sm text-text-70">{t('All done for now. New requests from employees will show up here.')}</p>
         ) : (
           <ul className="mt-4 divide-y divide-line">
             {todo.map((t) => (
@@ -78,18 +78,18 @@ export default function HrDashboard() {
           </ul>
         )}
         <p className="mt-4 border-t border-line pt-3 text-sm text-muted">
-          Need extra hands? <Link href="/hr/salary#overtime" className="font-medium text-royal">Offer overtime →</Link>
-          {openOffers > 0 && ` (${plural(openOffers, 'offer')} waiting for staff to answer)`}
+          {t('Need extra hands?')} <Link href="/hr/salary#overtime" className="font-medium text-royal">{t('Offer overtime →')}</Link>
+          {openOffers > 0 && ` (${tn(openOffers, '{n} offer waiting for staff to answer', '{n} offers waiting for staff to answer')})`}
         </p>
       </Panel>
 
       <div className="mt-6 grid grid-cols-2 gap-3 sm:mt-8 sm:gap-5 lg:grid-cols-4">
-        <Cell><Stat label="Total take-home pay" value={<Money amount={sum((p) => p.netPay)} />} note={`${rows.length} employees · ${paid ? `paid ${dateTime(paid.paidAt)}` : 'estimate'}`} /></Cell>
-        <Cell delay={60}><Stat label="Overtime pay" value={<Money amount={sum((p) => p.overtimePay)} />} note="Only overtime marked done" /></Cell>
-        <Cell delay={120}><Stat label="Bonuses" value={<Money amount={sum((p) => p.bonus)} />} /></Cell>
+        <Cell><Stat label={t('Total take-home pay')} value={<Money amount={sum((p) => p.netPay)} />} note={`${t('{n} employees', { n: rows.length })} · ${paid ? t('paid {when}', { when: dateTime(paid.paidAt) }) : t('estimate')}`} /></Cell>
+        <Cell delay={60}><Stat label={t('Overtime pay')} value={<Money amount={sum((p) => p.overtimePay)} />} note={t('Only overtime marked done')} /></Cell>
+        <Cell delay={120}><Stat label={t('Bonuses')} value={<Money amount={sum((p) => p.bonus)} />} /></Cell>
         <Cell delay={180}>
-          <Stat label="Employees with deductions" value={deducted.length} tone={deducted.length ? 'danger' : 'success'} note={<Money amount={sum((p) => p.totalDeductions)} />} />
-          <Link href="#deductions" className="btn btn-ghost mt-4">View deductions →</Link>
+          <Stat label={t('Employees with deductions')} value={deducted.length} tone={deducted.length ? 'danger' : 'success'} note={<Money amount={sum((p) => p.totalDeductions)} />} />
+          <Link href="#deductions" className="btn btn-ghost mt-4">{t('View deductions →')}</Link>
         </Cell>
       </div>
 
@@ -97,12 +97,12 @@ export default function HrDashboard() {
 
       <Panel className="mt-8">
         <div id="deductions" className="scroll-mt-40" />
-        <h2>Who has deductions, and why ({deducted.length})</h2>
-        {deducted.length === 0 ? <div className="mt-4"><Empty>No pay cuts this month. Use Try it live above to see one happen.</Empty></div> : (
+        <h2>{t('Who has deductions, and why ({n})', { n: deducted.length })}</h2>
+        {deducted.length === 0 ? <div className="mt-4"><Empty>{t('No pay cuts this month. Use Try it live above to see one happen.')}</Empty></div> : (
         <div className="mt-4 overflow-x-auto">
           <table className={TABLE}>
             <thead>
-              <tr>{['Employee', 'Why', 'Cut from pay', 'Take-home pay', 'WhatsApp'].map((h) => <th key={h} className={TH}>{h}</th>)}</tr>
+              <tr>{['Employee', 'Why', 'Cut from pay', 'Take-home pay', 'WhatsApp'].map((h) => <th key={h} className={TH}>{t(h)}</th>)}</tr>
             </thead>
             <tbody>
               {deducted.map(({ e, p }) => {
@@ -110,16 +110,16 @@ export default function HrDashboard() {
                 const messages = data.whatsapp.filter((m) => m.employeeId === e.id);
                 return (
                   <tr key={e.id}>
-                    <td className={TD}><span className="font-semibold">{e.name}</span><span className="block text-xs text-muted">{e.position}</span></td>
+                    <td className={TD}><span className="font-semibold">{e.name}</span><span className="block text-xs text-muted">{td(e.position)}</span></td>
                     <td className={TD}>
-                      <span className="flex flex-wrap gap-1">{causes.map(([k, n]) => <Badge key={k} tone={k === 'LATE' ? 'warn' : 'danger'}>{n}× {CAUSE[k]}</Badge>)}</span>
+                      <span className="flex flex-wrap gap-1">{causes.map(([k, n]) => <Badge key={k} tone={k === 'LATE' ? 'warn' : 'danger'}>{t(CAUSE[k], { n })}</Badge>)}</span>
                     </td>
                     <td className={`${TD} text-danger`}><Money amount={p.totalDeductions} minus /></td>
                     <td className={`${TD} font-semibold`}><Money amount={p.netPay} /></td>
                     <td className={TD}>
                       {messages.length ? (
-                        <span className="text-xs text-muted"><Badge tone="royal">{messages.length} sent (simulated)</Badge><span className="mt-1 block">last {dateTime(messages[0].at)}</span></span>
-                      ) : <span className="text-xs text-muted">No messages</span>}
+                        <span className="text-xs text-muted"><Badge tone="royal">{t('{n} sent (simulated)', { n: messages.length })}</Badge><span className="mt-1 block">{t('last {when}', { when: dateTime(messages[0].at) })}</span></span>
+                      ) : <span className="text-xs text-muted">{t('No messages')}</span>}
                     </td>
                   </tr>
                 );
