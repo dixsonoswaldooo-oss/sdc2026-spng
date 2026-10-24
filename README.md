@@ -35,7 +35,7 @@ Many small and medium-sized businesses manage employee attendance, overtime, lea
 
 ### Solution
 
-e-Salary Guard is an AI-powered payroll management system that automatically calculates employees’ net salaries based on attendance, overtime, bonuses, and leave records. Its AI feature classifies leave requests based on the reasons provided, helping HR review requests more efficiently. The system also provides early WhatsApp-style notifications about salary deductions, transparent salary breakdowns, and activity logs to improve accountability and reduce payroll disputes.
+e-Salary Guard is an AI-powered payroll management system that automatically calculates employees’ net salaries based on attendance, overtime, bonuses, and leave records. Its AI feature classifies leave requests based on the reasons provided, helping HR review requests more efficiently. The system also provides early notifications about salary deductions, transparent salary breakdowns, and activity logs to improve accountability and reduce payroll disputes.
 
 ### Key Features
 
