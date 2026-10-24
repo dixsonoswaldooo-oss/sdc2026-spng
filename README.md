@@ -169,7 +169,22 @@ curl -X POST https://api.runpod.ai/v2/$RUNPOD_ENDPOINT_ID/runsync \
 ## Challenges & Learnings
 
 - What challenges did you face, and how did you overcome them?
+    One of the main challenges we faced was coming up with an original idea. Since many of the features we initially considered were already available in Orbyte, we had to narrow down our ideas and focus on features that could provide additional value.
+
+Another challenge was task distribution within the team. We needed to figure out how to divide the workload fairly based on each member's abilities and ensure that everyone could contribute effectively to the project.
+
+We also struggled with learning how to use Replit and RunPod, as this was our first time being required to work with these platforms. Understanding how to set them up and integrate them into our project took time and experimentation.
+
+Additionally, our team had limited prior experience with GitHub and collaborative development. We had to learn how to manage our code, track changes, and work together without creating conflicts.
+
+Despite these challenges, we gradually overcame them by exploring the platforms, testing different approaches, discussing problems as a team, and learning from online documentation and resources.
+
 - What did your team learn?
+    Throughout this project, we learned the importance of problem-solving, teamwork, and adaptability. We realized that developing a successful project is not only about coming up with creative ideas but also about identifying existing solutions and finding ways to improve upon them.
+
+We also gained practical experience using Replit, RunPod, and GitHub, which helped us better understand the development workflow and the importance of collaboration in building a project.
+
+Most importantly, we learned that communication and proper task distribution are essential for working efficiently as a team. Even when facing unfamiliar technologies and unexpected difficulties, being willing to learn, experiment, and support one another helped us make progress and complete our project.
 
 ## Future Improvements
 
@@ -184,7 +199,7 @@ curl -X POST https://api.runpod.ai/v2/$RUNPOD_ENDPOINT_ID/runsync \
 | Gregorius Marvel Wicaksana | Backend / AI           | [@marvelwicaksana-hue](https://github.com/marvelwicaksana-hue) |
 | Manuel Otto Chandra | Backend / RunPod         | [@manuism](https://github.com/manuism) |
 | Owen Ferdinand Lee | Frontend            | [@owennew2015](https://github.com/owennew2015) |
-| Sunu Adi Sotya | Proposal         | [@username](https://github.com/username) |
+| Sunu Adi Sotya | Proposal         | [@username](https://github.com/Sunnadd) |
 
 
 ---
