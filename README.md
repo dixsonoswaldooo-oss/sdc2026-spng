@@ -212,7 +212,7 @@ Most importantly, we learned that communication and proper task distribution are
 
 ## Submission Checklist
 
-- [ ] Team name, domain (Domain 1 / Domain 2) and SDG track filled in
+- [-] Team name, domain (Domain 1 / Domain 2) and SDG track filled in
 - [ ] Slide deck link added
 - [ ] Demo video link added
 - [ ] Replit used, with proof of use in `submission/`
