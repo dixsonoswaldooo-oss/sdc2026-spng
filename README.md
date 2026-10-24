@@ -182,10 +182,10 @@ curl -X POST https://api.runpod.ai/v2/$RUNPOD_ENDPOINT_ID/runsync \
 | Name        | Role                | GitHub                                   |
 | ----------- | ------------------- | ---------------------------------------- |
 | Dixson Oswaldo Tanjaya | Team Lead / Backend | [@dixsonoswaldooo-oss](https://github.com/dixsonoswaldooo-oss) |
-| Gregorius Marvel Wicaksana | Frontend            | [@marvelwicaksana-hue](https://github.com/marvelwicaksana-hue) |
-| Manuel Otto Chandra | AI / RunPod         | [@manuism](https://github.com/manuism) |
+| Gregorius Marvel Wicaksana | Backend / AI           | [@marvelwicaksana-hue](https://github.com/marvelwicaksana-hue) |
+| Manuel Otto Chandra | Backend / RunPod         | [@manuism](https://github.com/manuism) |
 | Owen Ferdinand Lee | Frontend            | [@owennew2015](https://github.com/owennew2015) |
-| Sunu Adi Sotya | AI / RunPod         | [@username](https://github.com/username) |
+| Sunu Adi Sotya | Proposal         | [@username](https://github.com/username) |
 
 
 ---
