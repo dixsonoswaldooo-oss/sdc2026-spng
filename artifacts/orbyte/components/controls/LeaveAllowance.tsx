@@ -1,7 +1,7 @@
 'use client';
 // Annual leave allowance per employee. Only approved "Leave"-type working days count as used.
 import { useState } from 'react';
-import { ErrorNote, Panel, TABLE, TD, TH } from '@/components/ui';
+import { Notice, Panel, TABLE, TD, TH } from '@/components/ui';
 import { leaveUsed } from '@/lib/engine';
 import { DEMO_MONTH } from '@/lib/seed';
 import { useStore } from '@/lib/store';
@@ -25,11 +25,11 @@ export function LeaveAllowance() {
   };
 
   return (
-    <Panel className="mt-8">
+    <Panel className="mt-6">
       <h2>Leave allowance per employee</h2>
       <p className="mt-2 max-w-2xl text-sm text-text-70">
         Annual leave for {year}. Approved requests of type &ldquo;Leave&rdquo; use it up (working days only); sick, permission and day-off requests don&apos;t.
-        Going over the allowance only shows a warning: pay still follows the tolerated/deducted label.
+        Going over the allowance only shows a warning: pay still follows the paid or unpaid decision on each leave.
       </p>
       <div className="mt-4 overflow-x-auto">
         <table className={TABLE}>
@@ -70,8 +70,7 @@ export function LeaveAllowance() {
           </tbody>
         </table>
       </div>
-      <ErrorNote message={error} />
-      {saved && !error && <p role="status" className="mt-3 text-sm font-medium text-success">{saved}</p>}
+      <Notice error={error} success={saved} />
     </Panel>
   );
 }

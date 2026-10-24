@@ -1,13 +1,24 @@
 'use client';
+// HR's start page: what needs HR now (each with one button to where it's done), then the month's numbers,
+// the "Try it live" demo and who has deductions.
 import Link from 'next/link';
 import { SimulateEvent } from '@/components/hr/SimulateEvent';
 import { Badge, Cell, Empty, Money, PageHead, Panel, Stat, TABLE, TD, TH } from '@/components/ui';
-import { isPaid, payrollFor } from '@/lib/engine';
-import { dateTime, monthName, toSen } from '@/lib/format';
+import { payrollFor } from '@/lib/engine';
+import { dateTime, money, monthName, toSen } from '@/lib/format';
 import { DEMO_MONTH } from '@/lib/seed';
 import { useStore } from '@/lib/store';
 
 const CAUSE: Record<string, string> = { LATE: 'late', ABSENT: 'absent', LEAVE: 'unpaid leave' };
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+
+interface Task {
+  title: string;
+  detail: string;
+  action: string;
+  href: string;
+  primary?: boolean;
+}
 
 export default function HrDashboard() {
   const { data } = useStore();
@@ -18,40 +29,67 @@ export default function HrDashboard() {
   const pendingOt = data.overtime.filter((o) => o.status === 'REQUESTED').length;
   const cancellations = [...data.leaves, ...data.overtime].filter((x) => x.cancelRequestedAt).length;
   const openOffers = data.overtime.filter((o) => o.status === 'OFFERED').length;
+  const updates = data.notifications.filter((n) => !n.read).length;
   const paid = data.payments.find((p) => p.month === DEMO_MONTH);
+  const decide = pendingLeave + pendingOt + cancellations;
+
+  const todo: Task[] = [];
+  if (decide) {
+    todo.push({
+      title: `${plural(decide, 'request')} to decide`, action: 'Decide now →', href: '/hr/approvals', primary: true,
+      detail: [pendingLeave && `${pendingLeave} leave`, pendingOt && `${pendingOt} overtime`, cancellations && plural(cancellations, 'cancellation')].filter(Boolean).join(' · '),
+    });
+  }
+  if (updates) todo.push({ title: `${plural(updates, 'update')} from employees`, detail: 'A request was withdrawn or changed.', action: 'Read →', href: '/hr/approvals' });
+  if (!paid) {
+    todo.push({
+      title: `${monthName(DEMO_MONTH)} is not paid yet`, action: 'Review payroll →', href: '/hr/payroll', primary: !decide,
+      detail: `${money(sum((p) => p.netPay))} for ${rows.length} employees. Check it, then pay everyone in one click.`,
+    });
+  }
+  if (deducted.length) {
+    todo.push({
+      title: `${plural(deducted.length, 'employee')} with a pay cut this month`, action: 'See who →', href: '#deductions',
+      detail: `${money(sum((p) => p.totalDeductions))} in total. Each was told by WhatsApp when it happened.`,
+    });
+  }
 
   return (
     <>
-      <PageHead eyebrow={`Insight · ${monthName(DEMO_MONTH)}`} title="Payroll at a glance" action={<Link href="/hr/payroll" className="btn btn-primary">{paid ? 'View payroll' : 'Review payroll →'}</Link>}>
-        Take-home pay is recalculated automatically whenever attendance, approvals or settings change.
+      <PageHead eyebrow={`Dashboard · ${monthName(DEMO_MONTH)}`} title="Payroll at a glance">
+        Start with what needs you. The numbers below update by themselves.
       </PageHead>
 
-      <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
-        <Cell><Stat label="Total take-home pay" value={<Money amount={sum((p) => p.netPay)} />} note={`${rows.length} employees`} /></Cell>
-        <Cell delay={60}><Stat label="Total overtime cost" value={<Money amount={sum((p) => p.overtimePay)} />} note="Completed overtime only" /></Cell>
-        <Cell delay={120}><Stat label="Total bonus" value={<Money amount={sum((p) => p.bonus)} />} /></Cell>
+      <Panel>
+        <h2>What needs you now</h2>
+        {todo.length === 0 ? (
+          <p className="mt-3 text-sm text-text-70">All done for now. New requests from employees will show up here.</p>
+        ) : (
+          <ul className="mt-4 divide-y divide-line">
+            {todo.map((t) => (
+              <li key={t.title} className="flex flex-wrap items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
+                <div className="min-w-0">
+                  <p className="font-semibold text-navy">{t.title}</p>
+                  <p className="text-sm text-muted">{t.detail}</p>
+                </div>
+                <Link href={t.href} className={`btn ${t.primary ? 'btn-primary' : 'btn-ghost'} !px-4 !py-2`}>{t.action}</Link>
+              </li>
+            ))}
+          </ul>
+        )}
+        <p className="mt-4 border-t border-line pt-3 text-sm text-muted">
+          Need extra hands? <Link href="/hr/salary#overtime" className="font-medium text-royal">Offer overtime →</Link>
+          {openOffers > 0 && ` (${plural(openOffers, 'offer')} waiting for staff to answer)`}
+        </p>
+      </Panel>
+
+      <div className="mt-6 grid grid-cols-2 gap-3 sm:mt-8 sm:gap-5 lg:grid-cols-4">
+        <Cell><Stat label="Total take-home pay" value={<Money amount={sum((p) => p.netPay)} />} note={`${rows.length} employees · ${paid ? `paid ${dateTime(paid.paidAt)}` : 'estimate'}`} /></Cell>
+        <Cell delay={60}><Stat label="Overtime pay" value={<Money amount={sum((p) => p.overtimePay)} />} note="Only overtime marked done" /></Cell>
+        <Cell delay={120}><Stat label="Bonuses" value={<Money amount={sum((p) => p.bonus)} />} /></Cell>
         <Cell delay={180}>
           <Stat label="Employees with deductions" value={deducted.length} tone={deducted.length ? 'danger' : 'success'} note={<Money amount={sum((p) => p.totalDeductions)} />} />
-          <Link href="#deductions" className="btn btn-line mt-4">View deductions →</Link>
-        </Cell>
-      </div>
-
-      <div className="mt-3 grid gap-3 sm:mt-5 sm:gap-5 lg:grid-cols-3">
-        <Cell>
-          <p className="text-sm text-muted">Waiting for HR</p>
-          <p className="mt-1 text-[1.35rem] font-[650] text-navy sm:text-[1.7rem]">{pendingLeave + pendingOt + cancellations}</p>
-          <p className="mt-1 text-sm text-muted">{pendingLeave} leave · {pendingOt} overtime · {cancellations} cancellation requests</p>
-          <Link href="/hr/approvals" className="btn btn-line mt-4">Open approvals →</Link>
-        </Cell>
-        <Cell delay={60}>
-          <p className="text-sm text-muted">Overtime offers waiting for staff</p>
-          <p className="mt-1 text-[1.35rem] font-[650] text-navy sm:text-[1.7rem]">{openOffers}</p>
-          <Link href="/hr/salary#overtime" className="btn btn-line mt-4">Offer overtime →</Link>
-        </Cell>
-        <Cell delay={120}>
-          <p className="text-sm text-muted">Payroll status</p>
-          <p className="mt-2">{paid ? <Badge tone="success">Paid · locked</Badge> : <Badge tone="warn">Not paid yet</Badge>}</p>
-          <p className="mt-2 text-sm text-muted">{paid ? `Paid ${dateTime(paid.paidAt)} by ${paid.paidBy}` : isPaid(data, DEMO_MONTH) ? '' : 'Pay everyone in one click after review.'}</p>
+          <Link href="#deductions" className="btn btn-ghost mt-4">View deductions →</Link>
         </Cell>
       </div>
 
@@ -60,11 +98,11 @@ export default function HrDashboard() {
       <Panel className="mt-8">
         <div id="deductions" className="scroll-mt-40" />
         <h2>Who has deductions, and why ({deducted.length})</h2>
-        {deducted.length === 0 ? <div className="mt-4"><Empty>No deductions this period.</Empty></div> : (
+        {deducted.length === 0 ? <div className="mt-4"><Empty>No pay cuts this month. Use Try it live above to see one happen.</Empty></div> : (
         <div className="mt-4 overflow-x-auto">
           <table className={TABLE}>
             <thead>
-              <tr>{['Employee', 'Causes', 'Deducted', 'Take-home pay', 'WhatsApp'].map((h) => <th key={h} className={TH}>{h}</th>)}</tr>
+              <tr>{['Employee', 'Why', 'Cut from pay', 'Take-home pay', 'WhatsApp'].map((h) => <th key={h} className={TH}>{h}</th>)}</tr>
             </thead>
             <tbody>
               {deducted.map(({ e, p }) => {
@@ -74,11 +112,9 @@ export default function HrDashboard() {
                   <tr key={e.id}>
                     <td className={TD}><span className="font-semibold">{e.name}</span><span className="block text-xs text-muted">{e.position}</span></td>
                     <td className={TD}>
-                      {causes.length === 0 ? <Badge tone="success">None</Badge> : (
-                        <span className="flex flex-wrap gap-1">{causes.map(([k, n]) => <Badge key={k} tone={k === 'LATE' ? 'warn' : 'danger'}>{n}× {CAUSE[k]}</Badge>)}</span>
-                      )}
+                      <span className="flex flex-wrap gap-1">{causes.map(([k, n]) => <Badge key={k} tone={k === 'LATE' ? 'warn' : 'danger'}>{n}× {CAUSE[k]}</Badge>)}</span>
                     </td>
-                    <td className={`${TD} ${p.totalDeductions ? 'text-danger' : ''}`}><Money amount={p.totalDeductions} minus /></td>
+                    <td className={`${TD} text-danger`}><Money amount={p.totalDeductions} minus /></td>
                     <td className={`${TD} font-semibold`}><Money amount={p.netPay} /></td>
                     <td className={TD}>
                       {messages.length ? (

@@ -3,7 +3,7 @@
 import { useRef, useState, type FormEvent } from 'react';
 import { RequestHistory } from '@/components/employee/RequestHistory';
 import { LEAVE_TYPE } from '@/components/requests';
-import { ErrorNote, PageHead, Panel } from '@/components/ui';
+import { Notice, PageHead, Panel } from '@/components/ui';
 import { useMe } from '@/lib/useMe';
 import type { LeaveType } from '@/lib/types';
 
@@ -44,11 +44,11 @@ export default function Requests() {
     field?.focus({ preventScroll: true });
   };
 
-  const note = (msg: [string, boolean] | null) => msg && (msg[1] ? <p role="status" className="mt-3 text-sm font-medium text-success">{msg[0]}</p> : <ErrorNote message={msg[0]} />);
+  const note = (msg: [string, boolean] | null) => msg && <Notice error={msg[1] ? null : msg[0]} success={msg[0]} />;
 
   return (
     <>
-      <PageHead eyebrow="Requests" title="Ask for overtime or leave" />
+      <PageHead eyebrow="Requests" title="Ask for overtime or leave">Ask HR for leave or overtime. HR&apos;s answer shows up in the list below.</PageHead>
       <div className="grid gap-8 lg:grid-cols-2">
         <Panel>
           <h2>Leave, permission, sick or day off</h2>
@@ -66,7 +66,7 @@ export default function Requests() {
             <div className="field">
               <label htmlFor="reason">Reason</label>
               <textarea id="reason" ref={leaveReason} value={lv.reason} onChange={(e) => setLv({ ...lv, reason: e.target.value })} placeholder="e.g. My child has a high fever and needs to see a doctor." />
-              <span className="mt-1 block text-xs text-muted">The AI suggests whether this day is paid (tolerated) or unpaid (deducted). HR makes the final decision.</span>
+              <span className="mt-1 block text-xs text-muted">The AI suggests whether this day is paid or unpaid. HR makes the final decision.</span>
             </div>
             <button type="submit" className="btn btn-primary">Send request</button>
             {note(lvMsg)}

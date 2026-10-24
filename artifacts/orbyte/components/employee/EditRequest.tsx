@@ -66,7 +66,7 @@ function EditForm({ editing, onClose, onSaved }: { editing: NonNullable<Editing>
       )}
       <ErrorNote message={error} />
       <div className="mt-6 flex justify-end gap-3">
-        <button type="button" className="btn btn-line" onClick={onClose}>Cancel</button>
+        <button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
         <button type="submit" className="btn btn-primary">Save changes</button>
       </div>
     </form>

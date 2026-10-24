@@ -11,8 +11,7 @@ export default function PaymentHistory() {
   return (
     <>
       <PageHead eyebrow="Payment history" title="Payments">
-        The running month is a live estimate until it is paid. Each paid month is a frozen snapshot of what was paid, with
-        references, time and the HR person who paid it.
+        Look back at what was paid each month, and by whom. The running month is an estimate until it is paid.
       </PageHead>
       <PaymentRuns runs={draft ? [draft, ...data.payments] : data.payments} />
     </>

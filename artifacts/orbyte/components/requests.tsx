@@ -1,9 +1,9 @@
 'use client';
 // Shared bits for leave and overtime lists (HR and employee screens).
 import type { ReactNode } from 'react';
-import { LABEL_WORDS } from '@/lib/engine';
 import { date } from '@/lib/format';
 import type { LeaveRequest, Overtime } from '@/lib/types';
+import { LABEL_BY, LEAVE_PAY, PLEASE_CHECK } from '@/lib/words';
 import { Badge, Empty, TABLE, TD, TH } from './ui';
 
 type Tone = 'warn' | 'success' | 'muted' | 'royal';
@@ -13,15 +13,16 @@ export const LEAVE_STATUS: Record<LeaveRequest['status'], [string, Tone]> = {
   PENDING: ['Waiting for HR', 'warn'], APPROVED: ['Approved', 'success'], REJECTED: ['Rejected', 'muted'],
   WITHDRAWN: ['Withdrawn', 'muted'], CANCELLED: ['Cancelled', 'muted'],
 };
-export const SOURCE: Record<LeaveRequest['labelSource'], string> = { AI: 'AI', Fallback: 'Fallback', HR: 'Changed by HR' };
-
+/** One main badge (paid or unpaid leave) and at most one small note: "Please check" when unsure, else who decided. */
 export function LabelBadge({ leave }: { leave: LeaveRequest }) {
+  const unsure = leave.labelSource !== 'HR' && leave.confidence < 0.6;
+  const reading = leave.aiPending && leave.status === 'PENDING';
   return (
-    <span className="flex flex-wrap items-center gap-1">
-      <Badge tone={leave.label === 'DIPOTONG' ? 'danger' : 'success'}>{LABEL_WORDS[leave.label]}</Badge>
-      <Badge tone="royal">{SOURCE[leave.labelSource]}</Badge>
-      {leave.aiPending && leave.status === 'PENDING' && <Badge tone="muted">AI reading…</Badge>}
-      {leave.labelSource !== 'HR' && leave.confidence < 0.6 && <Badge tone="warn">Needs review</Badge>}
+    <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+      <Badge tone={leave.label === 'DIPOTONG' ? 'danger' : 'success'}>{LEAVE_PAY[leave.label]}</Badge>
+      {unsure
+        ? <Badge tone="warn">{PLEASE_CHECK}</Badge>
+        : <span className="text-xs text-muted">{reading ? 'AI is reading…' : LABEL_BY[leave.labelSource]}</span>}
     </span>
   );
 }
@@ -70,7 +71,7 @@ export function OvertimeTable({ rows, name, action }: { rows: Overtime[]; name: 
 export function GuardedButton({ label, blocked, onClick, primary = false }: { label: string; blocked: string | null; onClick: () => void; primary?: boolean }) {
   return (
     <span className="inline-flex flex-col items-start gap-1">
-      <button type="button" className={`btn ${primary ? 'btn-primary' : 'btn-line'} !px-4 !py-2`} disabled={!!blocked} onClick={onClick}>{label}</button>
+      <button type="button" className={`btn ${primary ? 'btn-primary' : 'btn-ghost'} !px-4 !py-2`} disabled={!!blocked} onClick={onClick}>{label}</button>
       {blocked && <span className="max-w-[16rem] text-xs text-muted">{blocked}</span>}
     </span>
   );

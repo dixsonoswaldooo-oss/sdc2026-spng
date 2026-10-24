@@ -67,6 +67,12 @@ export function ErrorNote({ message }: { message: string | null }) {
   return <p role="alert" className="mt-3 text-sm font-medium text-danger">{message}</p>;
 }
 
+/** The one place an action reports back: its error, or else its success, right under the action. */
+export function Notice({ error, success }: { error: string | null; success?: string | null }) {
+  if (error) return <ErrorNote message={error} />;
+  return success ? <p role="status" className="mt-3 text-sm font-medium text-success">{success}</p> : null;
+}
+
 /** The browser's own modal dialog: traps focus, closes with Esc. */
 export function Modal({ open, title, onClose, children }: { open: boolean; title: string; onClose: () => void; children: ReactNode }) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -106,7 +112,7 @@ export function ConfirmDialog({ confirm, onClose }: { confirm: Confirm | null; o
     <Modal open={!!confirm} title={confirm?.title ?? ''} onClose={onClose}>
       <div className="text-sm text-text-70">{confirm?.body}</div>
       <div className="mt-6 flex justify-end gap-3">
-        <button type="button" className="btn btn-line" onClick={onClose}>Cancel</button>
+        <button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
         <button type="button" className="btn btn-primary" onClick={() => { confirm?.onConfirm(); onClose(); }}>{confirm?.confirmLabel}</button>
       </div>
     </Modal>

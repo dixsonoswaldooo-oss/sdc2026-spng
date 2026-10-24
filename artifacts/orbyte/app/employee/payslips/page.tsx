@@ -12,7 +12,7 @@ export default function Payslips() {
   return (
     <>
       <PageHead eyebrow="Payslips" title="My payments">
-        This month&apos;s payslip updates by itself until HR pays it; paid payslips never change.
+        Your payslips. This month&apos;s updates by itself until HR pays it; paid ones never change.
       </PageHead>
       <PaymentRuns runs={draft ? [draft, ...data.payments] : data.payments} onlyEmployeeId={me.id} />
     </>

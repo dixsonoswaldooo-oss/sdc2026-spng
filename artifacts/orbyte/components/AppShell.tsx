@@ -18,14 +18,14 @@ import type { Role } from '@/lib/types';
 type Item = [string, string, string, IconName, boolean];
 const NAV: Record<Role, Item[]> = {
   HR: [
-    ['/hr', 'Dashboard', 'Home', 'home', true], ['/hr/salary', 'Salary & leave', 'Rules', 'sliders', true],
+    ['/hr', 'Dashboard', 'Home', 'home', true], ['/hr/salary', 'Pay & leave rules', 'Rules', 'sliders', true],
     ['/hr/approvals', 'Approvals', 'Approvals', 'check', true], ['/hr/attendance', 'Attendance', 'Attendance', 'calendar', false],
     ['/hr/payroll', 'Payroll', 'Payroll', 'wallet', true], ['/hr/payments', 'Payment history', 'Payments', 'history', false],
-    ['/hr/whatsapp', 'WA outbox', 'WA outbox', 'chat', false], ['/hr/activity', 'Activity log', 'Activity', 'list', false],
+    ['/hr/whatsapp', 'WhatsApp sent', 'WhatsApp', 'chat', false], ['/hr/activity', 'Activity log', 'Activity', 'list', false],
   ],
   EMPLOYEE: [
     ['/employee', 'My salary', 'Salary', 'wallet', true], ['/employee/requests', 'Requests', 'Requests', 'file', true],
-    ['/employee/offers', 'Overtime offers', 'Overtime', 'clock', true], ['/employee/inbox', 'WA inbox', 'Inbox', 'chat', true],
+    ['/employee/offers', 'Overtime', 'Overtime', 'clock', true], ['/employee/inbox', 'WhatsApp', 'WhatsApp', 'chat', true],
     ['/employee/payslips', 'Payslips', 'Payslips', 'receipt', true],
   ],
 };
@@ -145,7 +145,7 @@ export function AppShell({ role, children }: { role: Role; children: ReactNode }
         {serverError && (
           <p role="alert" className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-sm)] bg-danger/10 px-4 py-3 text-sm font-medium text-danger">
             {serverError}
-            <button type="button" className="btn btn-line !px-4 !py-1.5" onClick={clearServerError}>Dismiss</button>
+            <button type="button" className="btn btn-ghost !px-4 !py-1.5" onClick={clearServerError}>Dismiss</button>
           </p>
         )}
         {children}

@@ -83,7 +83,7 @@ describe('6. HR edits attendance', () => {
     expect(net(d1, 'E4')).toBe(net(d0, 'E4') + 100); // 2,200 / 22
     expect(d1.attendance.find((a) => a.employeeId === 'E4' && a.date === '2026-10-09')!.clockIn).toBeUndefined(); // raw kept
     expect(engine.attendanceSummary(d1, 'E4', '2026-10')).toMatchObject({ absent: 0, izin: 1, edited: 1 });
-    expect(d1.activity.some((a) => a.kind === 'ATTENDANCE' && a.detail === '2026-10-09: absent → izin (permitted)')).toBe(true);
+    expect(d1.activity.some((a) => a.kind === 'ATTENDANCE' && a.detail === '2026-10-09: absent → permitted absence')).toBe(true);
     const d2 = engine.setAttendance(d1, hr, 'E4', '2026-10-09', null);
     expect(net(d2, 'E4')).toBe(net(d0, 'E4'));
   });

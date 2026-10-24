@@ -75,7 +75,7 @@ export function keywordClassify(type: LeaveType, reason: string): LeaveClassific
   const tolerated = TOLERATED.find((w) => has(text, w));
   const deducted = DEDUCTED.find((w) => has(text, w));
   if (!text.trim()) return { label: 'DIPOTONG', alasan: 'No reason was given.', keyakinan: 0.7, source: 'Fallback' };
-  if (tolerated && !deducted) return { label: 'DITOLERANSI', alasan: `The reason mentions "${tolerated}", which is a tolerated reason.`, keyakinan: 0.7, source: 'Fallback' };
+  if (tolerated && !deducted) return { label: 'DITOLERANSI', alasan: `The reason mentions "${tolerated}", which is usually paid leave.`, keyakinan: 0.7, source: 'Fallback' };
   if (deducted && !tolerated) return { label: 'DIPOTONG', alasan: `The reason mentions "${deducted}", which is leisure or entertainment.`, keyakinan: 0.7, source: 'Fallback' };
   if (type === 'SICK' && !deducted) return { label: 'DITOLERANSI', alasan: 'Sick leave is tolerated.', keyakinan: 0.6, source: 'Fallback' };
   if (tolerated && deducted) return { label: 'DITOLERANSI', alasan: 'The reason mixes an emergency with leisure; HR should check.', keyakinan: 0.45, source: 'Fallback' };

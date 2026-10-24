@@ -38,7 +38,7 @@ export function DemoSpace({ compact = false }: { compact?: boolean }) {
       <p className="mt-2 break-all text-sm font-medium text-royal">{link}</p>
       <div className="mt-3 flex flex-wrap gap-2">
         <button
-          type="button" className="btn btn-line"
+          type="button" className="btn btn-ghost"
           onClick={() => navigator.clipboard.writeText(link).then(() => setNote(['Link copied.', true])).catch(() => setNote(['Copy the link above by hand.', true]))}
         >Copy link</button>
         <button type="button" className="btn btn-ghost" onClick={() => joinSpace().then(() => setNote(['Started a fresh demo space.', true]))}>Start a fresh space</button>

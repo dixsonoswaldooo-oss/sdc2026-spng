@@ -10,7 +10,7 @@ import { Badge, Empty, Money, Panel, TABLE, TD, TH } from './ui';
 export function PaymentRuns({ runs, onlyEmployeeId }: { runs: PaymentRun[]; onlyEmployeeId?: string }) {
   const [open, setOpen] = useState<string | null>(null);
   const sorted = [...runs].sort((a, b) => b.month.localeCompare(a.month));
-  if (!sorted.length) return <Empty>No payments yet.</Empty>;
+  if (!sorted.length) return <Empty>No payments yet. A month shows up here once HR pays it in Payroll.</Empty>;
 
   return (
     <div className="space-y-8">
@@ -50,7 +50,7 @@ export function PaymentRuns({ runs, onlyEmployeeId }: { runs: PaymentRun[]; only
                           <td className={TD}><Money amount={l.gross} /></td>
                           <td className={`${TD} ${l.totalDeductions ? 'text-danger' : ''}`}><Money amount={l.totalDeductions} minus /></td>
                           <td className={`${TD} font-semibold`}><Money amount={l.netPay} /></td>
-                          <td className={TD}><button type="button" className="btn btn-line" aria-expanded={open === key} onClick={() => setOpen(open === key ? null : key)}>{open === key ? 'Hide' : 'Details'}</button></td>
+                          <td className={TD}><button type="button" className="btn btn-ghost !px-4 !py-2" aria-expanded={open === key} onClick={() => setOpen(open === key ? null : key)}>{open === key ? 'Hide' : 'Details'}</button></td>
                         </tr>,
                         open === key && <tr key={`${key}-d`}><td colSpan={6} className="border-b border-line bg-gray px-5 py-4"><div className="max-w-xl"><Breakdown p={l} /></div></td></tr>,
                       ];

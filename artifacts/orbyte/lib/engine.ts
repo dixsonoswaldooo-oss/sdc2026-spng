@@ -3,6 +3,7 @@
 // Nothing in a paid month can change (`assertOpen`), and every reversal or edit is written to the activity log.
 import { money, monthName, toSen } from './format';
 import { computePayroll, datesBetween, deductionMessage, workingDays } from './payroll';
+import { LABEL_BY, LEAVE_PAY } from './words';
 import { DEFAULT_LEAVE_DAYS, DEMO_MONTH, DIVISIONS, EMPLOYEES, importAttendance, seedState } from './seed';
 import type {
   ActivityEntry, ActivityKind, AttendanceOverride, AttendanceRecord, Employee, HrNotification, ISODate, LeaveClassification,
@@ -32,7 +33,8 @@ export interface Ctx {
 type LeaveInput = { type: LeaveType; startDate: string; endDate: string; reason: string };
 type OvertimeInput = { date: string; hours: number; note: string };
 
-export const LABEL_WORDS: Record<LeaveLabel, string> = { DITOLERANSI: 'Tolerated', DIPOTONG: 'Deducted' };
+/** Screen words for a leave label (lib/words.ts); also used in log entries. */
+export const LABEL_WORDS: Record<LeaveLabel, string> = LEAVE_PAY;
 
 /** The calendar date in Malaysia (UTC+8) for an ISO timestamp: the demo's "today". */
 export const todayOf = (now: string): ISODate => new Date(Date.parse(now) + 8 * 3_600_000).toISOString().slice(0, 10);
@@ -236,7 +238,7 @@ export const updateLeaveAllowance = (data: Data, ctx: Ctx, id: string, days: num
   });
 
 const describeDay = (r: AttendanceRecord | undefined) =>
-  !r ? 'no record' : r.izin ? 'izin (permitted)' : !r.clockIn ? 'absent' : r.lateMinutes ? `present, ${r.lateMinutes} min late` : 'present, on time';
+  !r ? 'no record' : r.izin ? 'permitted absence' : !r.clockIn ? 'absent' : r.lateMinutes ? `present, ${r.lateMinutes} min late` : 'present, on time';
 
 /** HR corrects one day (null = back to the imported value). Only days that have happened, never in a paid month. */
 export const setAttendance = (data: Data, ctx: Ctx, employeeId: string, day: ISODate, value: { status: AttendanceOverride['status']; lateMinutes: number } | null, action = 'Edited attendance') =>
@@ -318,7 +320,7 @@ export function submitLeave(data: Data, ctx: Ctx, employeeId: string, input: Lea
     d.leaves.unshift(leave);
     const who = employee(d, employeeId).name;
     log(d, ctx, 'REQUEST', 'Submitted leave request', who, leaveWords(input));
-    log(d, ctx, 'AI_LABEL', `Labelled leave ${LABEL_WORDS[ai.label]}`, who, `${ai.alasan} (confidence ${Math.round(ai.keyakinan * 100)}%)`, ai.source === 'AI' ? 'AI' : 'System (fallback)');
+    log(d, ctx, 'AI_LABEL', `Labelled leave ${LABEL_WORDS[ai.label]}`, who, `${ai.alasan} (confidence ${Math.round(ai.keyakinan * 100)}%)`, ai.source === 'AI' ? 'AI' : 'System (keyword check)');
   });
 }
 
@@ -377,8 +379,8 @@ export const setLeaveLabel = (data: Data, ctx: Ctx, id: string, label: LeaveLabe
     const leave = leaveById(d, id);
     if (leave.label === label) return;
     assertOpen(d, datesBetween(leave.startDate, leave.endDate));
-    log(d, ctx, 'AI_LABEL', 'Changed leave label', employee(d, leave.employeeId).name, `${LABEL_WORDS[leave.label]} (${leave.labelSource}) → ${LABEL_WORDS[label]}`);
-    Object.assign(leave, { label, labelSource: 'HR', labelReason: `Changed by HR to ${LABEL_WORDS[label]}.`, aiPending: false });
+    log(d, ctx, 'AI_LABEL', 'Changed leave label', employee(d, leave.employeeId).name, `${LABEL_WORDS[leave.label]} (${LABEL_BY[leave.labelSource]}) → ${LABEL_WORDS[label]}`);
+    Object.assign(leave, { label, labelSource: 'HR', labelReason: `Set by HR to ${LABEL_WORDS[label].toLowerCase()}.`, aiPending: false });
   });
 
 /**
@@ -416,7 +418,7 @@ export const revertLeave = (data: Data, ctx: Ctx, id: string) =>
     delete leave.decidedAt;
     delete leave.decidedBy;
     delete leave.cancelRequestedAt;
-    log(d, ctx, 'REVERT', 'Reverted leave decision to pending', employee(d, leave.employeeId).name, `${span(leave)} · ${was}`);
+    log(d, ctx, 'REVERT', 'Undid leave decision (back to waiting)', employee(d, leave.employeeId).name, `${span(leave)} · ${was}`);
   });
 
 // ---------- Overtime ----------
@@ -516,7 +518,7 @@ export const revertOvertime = (data: Data, ctx: Ctx, id: string) =>
     delete ot.decidedAt;
     delete ot.decidedBy;
     delete ot.cancelRequestedAt;
-    log(d, ctx, 'REVERT', 'Reverted overtime decision to pending', employee(d, ot.employeeId).name, `${ot.hours} h on ${ot.date} · ${was}`);
+    log(d, ctx, 'REVERT', 'Undid overtime decision (back to waiting)', employee(d, ot.employeeId).name, `${ot.hours} h on ${ot.date} · ${was}`);
   });
 
 export const requestOvertimeCancellation = (data: Data, ctx: Ctx, id: string) =>

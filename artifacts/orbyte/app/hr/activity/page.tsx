@@ -7,7 +7,7 @@ import { useStore } from '@/lib/store';
 import type { ActivityKind } from '@/lib/types';
 
 const KINDS: [ActivityKind | 'ALL', string][] = [
-  ['ALL', 'All'], ['LOGIN', 'Sign-in'], ['CONFIG', 'Settings'], ['REQUEST', 'Requests'], ['DECISION', 'Decisions'], ['REVERT', 'Reverts'], ['ATTENDANCE', 'Attendance'],
+  ['ALL', 'All'], ['LOGIN', 'Sign-in'], ['CONFIG', 'Settings'], ['REQUEST', 'Requests'], ['DECISION', 'Decisions'], ['REVERT', 'Undone decisions'], ['ATTENDANCE', 'Attendance'],
   ['AI_LABEL', 'AI labels'], ['RECALC', 'Recalculations'], ['WHATSAPP', 'WhatsApp'], ['PAYMENT', 'Payments'], ['SYSTEM', 'System'],
 ];
 const TONE: Partial<Record<ActivityKind, 'royal' | 'success' | 'warn' | 'danger' | 'navy' | 'muted'>> = {
@@ -22,7 +22,7 @@ export default function ActivityLog() {
   return (
     <>
       <PageHead eyebrow="Activity log" title="Everything that happened">
-        Who did what, when, to whom, and what changed. Read-only.
+        Look up who did what, when, and what changed. Nothing can be edited here.
       </PageHead>
       <div className="mb-6 flex flex-wrap gap-2" role="group" aria-label="Filter by type">
         {KINDS.map(([k, label]) => (
@@ -32,7 +32,7 @@ export default function ActivityLog() {
         ))}
       </div>
       <Panel>
-        {rows.length === 0 ? <Empty>Nothing of this type yet.</Empty> : (
+        {rows.length === 0 ? <Empty>Nothing of this type yet. Pick another filter above.</Empty> : (
           <div className="overflow-x-auto">
             <table className={TABLE}>
               <thead><tr>{['Time', 'Actor', 'Action', 'Target', 'Details'].map((h) => <th key={h} className={TH}>{h}</th>)}</tr></thead>

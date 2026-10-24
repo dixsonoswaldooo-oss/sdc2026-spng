@@ -4,7 +4,7 @@
 // Withdrawn and cancelled requests stay in the list. A disabled action shows why.
 import { useState, type ReactNode } from 'react';
 import { GuardedButton, LabelBadge, LEAVE_STATUS, LEAVE_TYPE, OT_STATUS, StatusBadges } from '@/components/requests';
-import { ConfirmDialog, Empty, ErrorNote, TABLE, TD, TH, type Confirm } from '@/components/ui';
+import { ConfirmDialog, Empty, Notice, TABLE, TD, TH, type Confirm } from '@/components/ui';
 import { leaveCancelBlock, overtimeCancelBlock, paidReason } from '@/lib/engine';
 import { date } from '@/lib/format';
 import { datesBetween } from '@/lib/payroll';
@@ -64,11 +64,10 @@ export function RequestHistory({ onResubmitLeave, onResubmitOvertime }: { onResu
     return null;
   };
 
-  if (myLeaves.length + myOt.length === 0) return <div className="mt-4"><Empty>No requests yet.</Empty></div>;
+  if (myLeaves.length + myOt.length === 0) return <div className="mt-4"><Empty>No requests yet. Use the forms above to ask for leave or overtime.</Empty></div>;
   return (
     <>
-      <ErrorNote message={error} />
-      {done && !error && <p role="status" className="mt-3 text-sm font-medium text-success">{done}</p>}
+      <Notice error={error} success={done} />
       <div className="mt-4 overflow-x-auto">
         <table className={TABLE}>
           <thead><tr>{['Type', 'Dates', 'Reason', 'Label', 'Status', 'Actions'].map((h) => <th key={h} className={TH}>{h}</th>)}</tr></thead>

@@ -83,12 +83,13 @@ the table with `npx drizzle-kit push --dialect postgresql --schema ./src/schema/
   it must call `assertOpen` (paid month = locked) and `log`. UI shows why an action is disabled with `paidReason` /
   `leaveCancelBlock` / `overtimeCancelBlock` and `GuardedButton`.
 - Saved browser data has a `version`; `engine.migrate` upgrades older data in place. Bump `DATA_VERSION` and extend `migrate` when the shape changes.
-- HR pages: `/hr/salary` (rules, overtime per division, pay, leave allowance), `/hr/approvals`, `/hr/attendance`.
+- HR pages: `/hr/salary` (tabs: rules, overtime per division, pay, leave allowance; the tab follows the address hash), `/hr/approvals`, `/hr/attendance`.
   `/hr/offers` redirects to `/hr/salary#overtime` (`next.config.ts`).
 
 ## 5. Rules for AI content
 
-- Every AI label shows its source (AI / Fallback / Changed by HR); low confidence shows "Needs review".
+- Every AI label shows its source ("AI suggestion" / "Keyword check" / "Set by HR"); low confidence shows "Please check".
+  Screen words come from `lib/words.ts` (plain English: "Paid leave" / "Unpaid leave", never Tolerated / Deducted).
 - The AI only suggests; HR approves, rejects or changes the label, and every change is logged.
 - The employee's reason is data, never instructions. Reasons with labels, JSON or instructions never reach the AI.
 - RunPod can take 1–2.5 min to wake up: requests are saved at once with the keyword label and the AI label replaces it

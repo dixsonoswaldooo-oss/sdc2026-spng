@@ -277,3 +277,21 @@ laptop and an employee on a phone see the same requests and decisions within a f
   table turns into cards, forms put paired fields side by side, and buttons/fields are at least 44px tall.
 - **Checks:** 61 automatic tests; browser tests in both modes (demo 22, revision 23, two-device + separate-space 9,
   slow AI 4), and a phone audit: no page or table scrolls sideways any more.
+
+## Easier to understand: plain words, clear starting points (24 Oct 2026)
+
+- **One word list** (`lib/words.ts`) used on every screen: "Paid leave" / "Unpaid leave" (was Tolerated / Deducted),
+  "AI suggestion" / "Keyword check" / "Set by HR" (was AI / Fallback / HR), "Please check" (was Needs review),
+  "Permitted absence" (was izin), "Own rate" / "Same as everyone" (was Override / Default), "Undo decision" (was Revert).
+  Each leave shows one main badge and at most one small note.
+- **HR dashboard** starts with "What needs you now": real tasks, each with one button (decide requests, review payroll,
+  see who had a pay cut). The numbers moved below it.
+- **Employee "My salary"** starts with one sentence: how much, why less (with dates), and whether anything needs doing.
+- **Sign-in page** has a "Try it in 3 steps" card (can be hidden; remembered in this browser only). Every page now opens
+  with one sentence saying what the page is for.
+- **Pay & leave rules** is split into tabs (Rules · Overtime · Pay · Leave allowance). The address follows the tab, so
+  `/hr/salary#overtime` and the old `/hr/offers` link open the Overtime tab.
+- **Approvals** is one "To decide" list (leave, overtime and cancellation requests) with an All / Leave / Overtime filter,
+  and a History panel below.
+- Secondary buttons look like buttons; success and error messages use one component (`Notice`) right under the action;
+  empty lists say what to do next. On phones the "Pay everyone" bar stays visible while scrolling the payroll.

@@ -7,12 +7,23 @@ import { Reveal } from '@/components/Reveal';
 import { ACCOUNTS, COMPANY, EMPLOYEES } from '@/lib/seed';
 import { useStore } from '@/lib/store';
 
+const GUIDE_KEY = 'esg-guide';
+
 export default function LoginPage() {
   const { account, signIn } = useStore();
   const router = useRouter();
   const [email, setEmail] = useState(ACCOUNTS[0].email);
   const [password, setPassword] = useState('demo');
   const [error, setError] = useState('');
+  const [guide, setGuide] = useState(false); // read after mount so server and browser render the same first
+
+  useEffect(() => {
+    try { setGuide(localStorage.getItem(GUIDE_KEY) !== 'hidden'); } catch { setGuide(true); }
+  }, []);
+  const hideGuide = () => {
+    setGuide(false);
+    try { localStorage.setItem(GUIDE_KEY, 'hidden'); } catch { /* private window: hidden for this visit only */ }
+  };
 
   useEffect(() => {
     if (account) router.replace(account.role === 'HR' ? '/hr' : '/employee');
@@ -54,6 +65,19 @@ export default function LoginPage() {
             <li>AI reads leave reasons; HR has the final say</li>
             <li>One-click payroll with a full activity log</li>
           </ul>
+          {guide && (
+            <section aria-labelledby="guide-title" className="mt-8 max-w-md rounded-[var(--radius)] bg-white p-5 shadow-[0_1px_2px_rgba(11,30,77,0.08)]">
+              <div className="flex items-start justify-between gap-3">
+                <h2 id="guide-title" className="!text-[1.1rem]">New here? Try it in 3 steps</h2>
+                <button type="button" className="btn btn-ghost !px-3 !py-1 text-xs" onClick={hideGuide}>Hide</button>
+              </div>
+              <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm text-text-70">
+                <li>Sign in as <strong>{ACCOUNTS[0].name}</strong> (HR) and use <strong>Try it live</strong> on the dashboard.</li>
+                <li>Sign in as an employee and <strong>ask for leave</strong> under Requests.</li>
+                <li>Go back to HR, <strong>approve</strong> it in Approvals, and watch the pay change.</li>
+              </ol>
+            </section>
+          )}
         </Reveal>
 
         <Reveal delay={120} className="rounded-[var(--radius-lg)] bg-white p-7 shadow-[0_30px_70px_-30px_rgba(11,11,12,0.18)] sm:p-9">

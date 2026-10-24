@@ -1,5 +1,6 @@
 'use client';
 // Overtime from HR (accept / decline) and approved own requests; mark done after working it, or ask HR to cancel.
+import Link from 'next/link';
 import { useState } from 'react';
 import { GuardedButton, OT_STATUS, StatusBadges } from '@/components/requests';
 import { Badge, ConfirmDialog, Empty, ErrorNote, PageHead, Panel, type Confirm } from '@/components/ui';
@@ -20,11 +21,11 @@ export default function MyOvertime() {
   return (
     <>
       <PageHead eyebrow="Overtime" title="Offers and approved overtime">
-        Accept or decline HR&apos;s offers. After working the hours, mark it done and it is added to your pay. Plans changed? Ask HR to cancel before the day.
+        Answer HR&apos;s overtime offers. After you work the hours, mark them done and they are added to your pay.
       </PageHead>
       <ErrorNote message={error} />
       <Panel>
-        {mine.length === 0 ? <Empty>No overtime offers or approved requests yet.</Empty> : (
+        {mine.length === 0 ? <Empty>No overtime yet. Want extra hours? <Link href="/employee/requests" className="font-medium text-royal">Ask HR under Requests →</Link></Empty> : (
           <ul className="space-y-4">
             {mine.map((o) => (
               <li key={o.id} className="flex flex-wrap items-center justify-between gap-4 rounded-[var(--radius)] bg-gray p-5">

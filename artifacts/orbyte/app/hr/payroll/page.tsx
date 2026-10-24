@@ -47,7 +47,7 @@ export default function Payroll() {
           </label>
         }
       >
-        Review every line, then pay everyone at once. Payment is simulated: no money is moved.
+        Check everyone&apos;s pay for the month, then pay everyone at once. Simulated: no money is moved.
       </PageHead>
 
       {run && (
@@ -105,8 +105,8 @@ export default function Payroll() {
         </div>
 
         {!run && (
-          <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-line pt-6">
-            <label className="flex cursor-pointer items-center gap-3 text-sm">
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-line bg-white pt-6 max-sm:sticky max-sm:bottom-[calc(4.25rem+env(safe-area-inset-bottom))] max-sm:z-30 max-sm:pb-4 max-sm:pt-4">
+            <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm">
               <input type="checkbox" className="size-4 accent-[var(--royal)]" checked={checked} onChange={(e) => setChecked(e.target.checked)} />
               I have checked the salary details above
             </label>

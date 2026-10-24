@@ -2,11 +2,12 @@
 // Overtime rules and offers, per division. The global rate is the default; a division can override it.
 import { useState, type FormEvent } from 'react';
 import { OvertimeTable } from '@/components/requests';
-import { Badge, ErrorNote, Panel, TABLE, TD, TH } from '@/components/ui';
+import { Badge, Notice, Panel, TABLE, TD, TH } from '@/components/ui';
 import { overtimeRate } from '@/lib/engine';
 import { money } from '@/lib/format';
 import { DIVISIONS } from '@/lib/seed';
 import { useStore } from '@/lib/store';
+import { RATE_KIND } from '@/lib/words';
 
 const ALL = 'ALL';
 
@@ -50,11 +51,11 @@ export function OvertimeControls() {
   };
 
   return (
-    <Panel className="mt-8">
+    <Panel className="mt-6">
       <div id="overtime" className="scroll-mt-40" />
       <h2>Overtime rules and offers</h2>
       <p className="mt-2 max-w-2xl text-sm text-text-70">
-        The overtime rate in Global rules is the default for everyone. Pick a division to give it its own rate (an override) or to offer overtime to its people.
+        The overtime rate under Rules is the same for everyone. Pick a division to give it its own rate, or to offer overtime to its people.
         Employees accept or decline, then mark it done after working it. Only completed overtime is paid.
       </p>
 
@@ -69,8 +70,8 @@ export function OvertimeControls() {
       <div className="rounded-[var(--radius)] bg-gray p-5">
         {division === ALL ? (
           <p className="flex flex-wrap items-center gap-2 text-sm">
-            Overtime rate <span className="tabular font-semibold">{money(data.config.overtimeRatePerHour)}/hour</span> <Badge tone="muted">Default</Badge>
-            <span className="text-muted">Change it under Global rules.</span>
+            Overtime rate <span className="tabular font-semibold">{money(data.config.overtimeRatePerHour)}/hour</span> <Badge tone="muted">For everyone</Badge>
+            <span className="text-muted">Change it under Rules.</span>
           </p>
         ) : (
           <div className="flex flex-wrap items-end gap-3">
@@ -78,14 +79,14 @@ export function OvertimeControls() {
               <label htmlFor="division-rate">Overtime rate for {division} (RM per hour)</label>
               <input id="division-rate" type="number" min={0} step={0.5} value={shownRate} onChange={(e) => setRate(Number(e.target.value))} className="tabular" />
             </div>
-            <span className="mb-2">{override === undefined ? <Badge tone="muted">Default (global)</Badge> : <Badge tone="royal">Override</Badge>}</span>
+            <span className="mb-2">{override === undefined ? <Badge tone="muted">{RATE_KIND.shared}</Badge> : <Badge tone="royal">{RATE_KIND.own}</Badge>}</span>
             <span className="flex-1" />
             <button
               type="button" className="btn btn-primary" disabled={rate === null || rate === (override ?? data.config.overtimeRatePerHour)}
               onClick={() => act(() => setDivisionOvertime(division, rate), `${division} now uses ${money(rate ?? 0)}/hour.`)}
-            >Save override</button>
+            >Save own rate</button>
             {override !== undefined && (
-              <button type="button" className="btn btn-line" onClick={() => act(() => setDivisionOvertime(division, null), `${division} uses the global default again.`)}>Reset to default</button>
+              <button type="button" className="btn btn-ghost" onClick={() => act(() => setDivisionOvertime(division, null), `${division} uses the same rate as everyone again.`)}>Use the same rate as everyone</button>
             )}
           </div>
         )}
@@ -102,7 +103,7 @@ export function OvertimeControls() {
                   <td className={`${TD} font-semibold`}>{d}</td>
                   <td className={TD}>{data.employees.filter((e) => e.division === d).map((e) => `${e.name} (${e.position})`).join(', ')}</td>
                   <td className={`${TD} tabular`}>{money(own ?? data.config.overtimeRatePerHour)}/hour</td>
-                  <td className={TD}>{own === undefined ? <Badge tone="muted">Default</Badge> : <Badge tone="royal">Override</Badge>}</td>
+                  <td className={TD}>{own === undefined ? <Badge tone="muted">{RATE_KIND.shared}</Badge> : <Badge tone="royal">{RATE_KIND.own}</Badge>}</td>
                 </tr>
               );
             })}
@@ -141,8 +142,7 @@ export function OvertimeControls() {
           </span>
         </div>
       </form>
-      <ErrorNote message={error} />
-      {done && !error && <p role="status" className="mt-3 text-sm font-medium text-success">{done}</p>}
+      <Notice error={error} success={done} />
 
       <h3 className="mt-8 text-[1.05rem] font-semibold">Offers sent</h3>
       <OvertimeTable rows={data.overtime.filter((o) => o.origin === 'HR')} name={name} />

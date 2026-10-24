@@ -39,7 +39,7 @@ describe('demo scenarios from the spec', () => {
     const d3 = engine.decideLeave(d2, hr, leave.id, true);
     expect(net(d3, 'E1')).toBe(full);
     expect(d3.leaves[0].labelSource).toBe('HR');
-    expect(d3.activity.some((a) => a.action === 'Changed leave label' && a.detail === 'Deducted (Fallback) → Tolerated')).toBe(true);
+    expect(d3.activity.some((a) => a.action === 'Changed leave label' && a.detail === 'Unpaid leave (Keyword check) → Paid leave')).toBe(true);
     // Approved as Deducted instead → one day of daily wage is cut
     const d4 = engine.decideLeave(d1, hr, leave.id, true);
     expect(net(d4, 'E1')).toBe(full - 145.45); // 3,200 / 22

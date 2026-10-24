@@ -11,7 +11,7 @@ export default function Outbox() {
   return (
     <>
       <PageHead
-        eyebrow="WhatsApp outbox"
+        eyebrow="WhatsApp sent"
         title="Messages sent"
         action={
           <label className="flex items-center gap-2 text-sm">
@@ -23,7 +23,7 @@ export default function Outbox() {
           </label>
         }
       >
-        Sent automatically for every new deduction, again only if its amount changes, and for overtime offers. Simulated: nothing leaves this app.
+        See every WhatsApp the app sent: one per new pay cut, one when a cut changes, and overtime offers. Simulated: nothing leaves this app.
       </PageHead>
       <WhatsAppList messages={messages} employees={data.employees} showRecipient />
     </>

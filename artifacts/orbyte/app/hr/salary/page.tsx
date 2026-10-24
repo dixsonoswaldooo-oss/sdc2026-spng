@@ -1,9 +1,10 @@
 'use client';
-// Salary & leave controls: global rules, overtime per division, pay per employee (live preview) and leave allowance.
-import { useState } from 'react';
+// Pay & leave rules, one tab at a time: global rules, overtime per division, pay per employee (live preview), leave allowance.
+// The tab follows the address hash, so /hr/salary#overtime (and the /hr/offers redirect) opens Overtime.
+import { useEffect, useState } from 'react';
 import { LeaveAllowance } from '@/components/controls/LeaveAllowance';
 import { OvertimeControls } from '@/components/controls/OvertimeControls';
-import { Badge, Cell, ErrorNote, Money, PageHead, Panel, TABLE, TD, TH } from '@/components/ui';
+import { Badge, Cell, Money, Notice, PageHead, Panel, TABLE, TD, TH } from '@/components/ui';
 import { attendanceOf, isPaid, payrollFor } from '@/lib/engine';
 import { monthName } from '@/lib/format';
 import { computePayroll } from '@/lib/payroll';
@@ -19,7 +20,23 @@ const FIELDS: [keyof PayrollConfig, string, string, number][] = [
   ['leaveDeductionPct', 'Unpaid leave deduction', '% of daily wage per day', 5],
 ];
 
+const TABS = [['rules', 'Rules'], ['overtime', 'Overtime'], ['pay', 'Pay'], ['leave-allowance', 'Leave allowance']] as const;
+type Tab = (typeof TABS)[number][0];
+const tabOf = (hash: string): Tab => TABS.find(([id]) => `#${id}` === hash)?.[0] ?? 'rules';
+
 export default function SalaryControls() {
+  const [tab, setTab] = useState<Tab>('rules');
+  useEffect(() => {
+    const follow = () => setTab(tabOf(location.hash));
+    follow();
+    addEventListener('hashchange', follow);
+    return () => removeEventListener('hashchange', follow);
+  }, []);
+  const open = (id: Tab) => {
+    setTab(id);
+    setSaved(null);
+    history.replaceState(null, '', `#${id}`);
+  };
   const { data, updateConfig, updateEmployeePay } = useStore();
   const [config, setConfig] = useState(data.config);
   const [pay, setPay] = useState(() => Object.fromEntries(data.employees.map((e) => [e.id, { base: e.baseSalary, bonus: e.bonus }])));
@@ -37,6 +54,7 @@ export default function SalaryControls() {
       overtime: data.overtime.filter((o) => o.employeeId === id),
     });
   };
+  const feedback = <Notice error={error} success={saved} />;
   const act = (fn: () => void, message: string) => {
     setError(null);
     try {
@@ -49,12 +67,19 @@ export default function SalaryControls() {
 
   return (
     <>
-      <PageHead eyebrow="Salary & leave controls" title="Pay, overtime and leave rules">
-        Change a number and the preview updates at once. Saving recalculates everyone, sends WhatsApp updates for changed deductions and records it in the activity log.
+      <PageHead eyebrow="Pay & leave rules" title="Pay, overtime and leave rules">
+        Set how pay, overtime and leave are worked out. Saving recalculates everyone and tells them by WhatsApp if a cut changes.
       </PageHead>
       {locked && <p className="mb-6 rounded-[var(--radius-sm)] bg-gray px-4 py-3 text-sm"><Badge tone="success">{monthName(DEMO_MONTH)} is paid</Badge> <span className="ml-2 text-muted">Its amounts are frozen; changes here apply to the next payroll.</span></p>}
 
-      <Panel>
+      <div role="tablist" aria-label="Rules sections" className="flex flex-wrap gap-2">
+        {TABS.map(([id, label]) => (
+          <button key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => open(id)} className={`btn shrink-0 !px-4 !py-2 ${tab === id ? 'btn-primary' : 'btn-ghost'}`}>{label}</button>
+        ))}
+      </div>
+
+      {tab === 'rules' && <>
+      <Panel className="mt-6">
         <h2>Global rules</h2>
         <div className="mt-5 grid grid-cols-2 gap-x-3 sm:gap-x-6 lg:grid-cols-5">
           {FIELDS.map(([key, label, unit, step]) => (
@@ -67,17 +92,20 @@ export default function SalaryControls() {
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <button type="button" className="btn btn-primary" disabled={!configChanged} onClick={() => act(() => updateConfig(config), 'Rules saved. Pay recalculated.')}>Save rules</button>
-          {configChanged && <button type="button" className="btn btn-line" onClick={() => setConfig(data.config)}>Undo</button>}
-          {configChanged && <span className="text-sm text-warn">Preview below uses these unsaved rules.</span>}
+          {configChanged && <button type="button" className="btn btn-ghost" onClick={() => setConfig(data.config)}>Undo</button>}
+          {configChanged && <span className="text-sm text-warn">Not saved yet. The preview under Pay already uses these rules.</span>}
         </div>
-        <ErrorNote message={error} />
-        {saved && !error && <p role="status" className="mt-3 text-sm font-medium text-success">{saved}</p>}
+        {feedback}
       </Panel>
+      <Cell className="mt-8"><p className="text-sm">Take-home pay = base + bonus + completed overtime − late, absence and unpaid-leave deductions. No tax, EPF, SOCSO or EIS in this demo.</p></Cell>
+      </>}
 
-      <OvertimeControls />
+      {tab === 'overtime' && <OvertimeControls />}
 
-      <Panel className="mt-8">
+      {tab === 'pay' && (
+      <Panel className="mt-6">
         <h2>Pay per employee</h2>
+        {feedback}
         <div className="mt-4 overflow-x-auto">
           <table className={TABLE}>
             <thead><tr>{['Employee', 'Base salary (RM)', 'Bonus (RM)', 'Now', 'Preview', ''].map((h) => <th key={h} className={TH}>{h}</th>)}</tr></thead>
@@ -111,8 +139,8 @@ export default function SalaryControls() {
           </table>
         </div>
       </Panel>
-      <LeaveAllowance />
-      <Cell className="mt-8"><p className="text-sm">Take-home pay = base + bonus + completed overtime − late, absence and unpaid-leave deductions. No tax, EPF, SOCSO or EIS in this demo.</p></Cell>
+      )}
+      {tab === 'leave-allowance' && <LeaveAllowance />}
     </>
   );
 }

@@ -2,16 +2,17 @@
 // HR corrects attendance day by day. Corrections sit on top of the imported data (never overwritten) and can be reset.
 // The monthly counts and everyone's pay update after each save.
 import { useState } from 'react';
-import { Badge, ErrorNote, PageHead, Panel, TABLE, TD, TH } from '@/components/ui';
+import { Badge, Notice, PageHead, Panel, TABLE, TD, TH } from '@/components/ui';
 import { attendanceOf, attendanceSummary, paidReason } from '@/lib/engine';
 import { date, monthName } from '@/lib/format';
 import { DEMO_MONTH } from '@/lib/seed';
 import { useStore } from '@/lib/store';
 import type { AttendanceOverride, AttendanceRecord } from '@/lib/types';
+import { DAY_STATUS } from '@/lib/words';
 
 type Status = AttendanceOverride['status'];
 const statusOf = (r: AttendanceRecord): Status => (r.izin ? 'IZIN' : r.clockIn ? 'PRESENT' : 'ABSENT');
-const describe = (r: AttendanceRecord) => (r.izin ? 'Izin' : !r.clockIn ? 'Absent' : r.lateMinutes ? `In ${r.clockIn} · ${r.lateMinutes} min late` : `In ${r.clockIn} · on time`);
+const describe = (r: AttendanceRecord) => (r.izin ? DAY_STATUS.IZIN : !r.clockIn ? 'Absent' : r.lateMinutes ? `In ${r.clockIn} · ${r.lateMinutes} min late` : `In ${r.clockIn} · on time`);
 
 export default function AttendancePage() {
   const { data, setAttendance } = useStore();
@@ -39,7 +40,7 @@ export default function AttendancePage() {
   return (
     <>
       <PageHead eyebrow="Attendance" title={`Attendance · ${monthName(DEMO_MONTH)}`}>
-        Correct a day when the imported attendance is wrong. Your change is kept apart from the imported data, marked &ldquo;Edited by HR&rdquo;, logged, and can be reset. Pay is recalculated at once.
+        Fix a day when the imported attendance is wrong. Your fix is marked &ldquo;Edited by HR&rdquo;, logged and can be reset; pay updates at once.
       </PageHead>
       {locked && <p className="mb-6 rounded-[var(--radius-sm)] bg-gray px-4 py-3 text-sm"><Badge tone="success">Locked</Badge> <span className="ml-2 text-muted">{locked}, so attendance can no longer be edited.</span></p>}
 
@@ -47,7 +48,7 @@ export default function AttendancePage() {
         <h2>Monthly summary</h2>
         <div className="mt-4 overflow-x-auto">
           <table className={TABLE}>
-            <thead><tr>{['Employee', 'Absent', 'Izin (permitted)', 'Late beyond tolerance', 'Edited by HR', ''].map((h) => <th key={h} className={TH}>{h}</th>)}</tr></thead>
+            <thead><tr>{['Employee', 'Absent', 'Permitted absence', 'Late (past tolerance)', 'Edited by HR', ''].map((h) => <th key={h} className={TH}>{h}</th>)}</tr></thead>
             <tbody>
               {data.employees.map((e) => {
                 const s = attendanceSummary(data, e.id, DEMO_MONTH);
@@ -59,7 +60,7 @@ export default function AttendancePage() {
                     <td className={`${TD} tabular`}>{s.late} day{s.late === 1 ? '' : 's'}</td>
                     <td className={TD}>{s.edited ? <Badge tone="royal">{s.edited} day{s.edited === 1 ? '' : 's'} edited</Badge> : <span className="text-xs text-muted">None</span>}</td>
                     <td className={TD}>
-                      <button type="button" className="btn btn-line !px-4 !py-2" aria-pressed={e.id === who} onClick={() => { setWho(e.id); setDraft({}); setSaved(null); }}>Edit days</button>
+                      <button type="button" className="btn btn-ghost !px-4 !py-2" aria-pressed={e.id === who} onClick={() => { setWho(e.id); setDraft({}); setSaved(null); }}>Edit days</button>
                     </td>
                   </tr>
                 );
@@ -67,13 +68,12 @@ export default function AttendancePage() {
             </tbody>
           </table>
         </div>
-        <p className="mt-3 text-xs text-muted">Izin counts days you marked izin plus approved &ldquo;Permission&rdquo; requests. Days from today on have not happened yet and are not shown below.</p>
+        <p className="mt-3 text-xs text-muted">Permitted absence counts days you marked as permitted plus approved &ldquo;Permission&rdquo; requests; they are not cut from pay. Days from today on have not happened yet and are not shown below.</p>
       </Panel>
 
       <Panel className="mt-8">
         <h2>{person.name} · day by day</h2>
-        <ErrorNote message={error} />
-        {saved && !error && <p role="status" className="mt-3 text-sm font-medium text-success">{saved}</p>}
+        <Notice error={error} success={saved} />
         <div className="mt-4 overflow-x-auto">
           <table className={TABLE}>
             <thead><tr>{['Date', 'Imported', 'Status', 'Minutes late', '', ''].map((h, i) => <th key={`${h}${i}`} className={TH}>{h}</th>)}</tr></thead>
@@ -96,9 +96,9 @@ export default function AttendancePage() {
                         onChange={(e) => setDraft({ ...draft, [raw.date]: { ...value, status: e.target.value as Status } })}
                         className="rounded-[var(--radius-sm)] border border-line bg-white px-3 py-2 text-sm"
                       >
-                        <option value="PRESENT">Present</option>
-                        <option value="ABSENT">Absent</option>
-                        <option value="IZIN">Izin (permitted)</option>
+                        <option value="PRESENT">{DAY_STATUS.PRESENT}</option>
+                        <option value="ABSENT">{DAY_STATUS.ABSENT}</option>
+                        <option value="IZIN">{DAY_STATUS.IZIN}</option>
                       </select>
                     </td>
                     <td className={TD}>
@@ -119,7 +119,7 @@ export default function AttendancePage() {
                         >Save</button>
                         {now.editedByHr && (
                           <button
-                            type="button" className="btn btn-line !px-4 !py-2" disabled={!!locked}
+                            type="button" className="btn btn-ghost !px-4 !py-2" disabled={!!locked}
                             onClick={() => act(() => setAttendance(who, raw.date, null), `${date(raw.date, { year: false })} back to the imported value.`, raw.date)}
                           >Reset</button>
                         )}

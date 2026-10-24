@@ -11,7 +11,7 @@ const KIND: Record<WhatsAppMessage['kind'], [string, 'danger' | 'warn' | 'royal'
 };
 
 export function WhatsAppList({ messages, employees, showRecipient }: { messages: WhatsAppMessage[]; employees: Employee[]; showRecipient: boolean }) {
-  if (!messages.length) return <Empty>No messages yet.</Empty>;
+  if (!messages.length) return <Empty>No messages yet. One is sent the moment a pay cut appears.</Empty>;
   return (
     <ul className="space-y-3">
       {messages.map((m) => {
