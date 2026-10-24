@@ -1,6 +1,6 @@
 # E-Salary Guard
 
-> A one-sentence description of what your project does and who it is for.
+e-Salary Guard is an AI-powered payroll management system that helps SMEs monitor cash flow, predict salary payment shortfalls, and ensure employees are paid transparency, accurately, and on time.
 
 ---
 
